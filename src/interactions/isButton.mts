@@ -15,8 +15,6 @@ export default async (
     | Queue
     | undefined;
 
-  const sessionId = queue ? (idParts.pop() as string) : null;
-
   const customId = idParts.join("_");
 
   if (request === "message") {
@@ -41,6 +39,8 @@ export default async (
     }
     return;
   }
+
+  const sessionId = idParts.pop() as string;
 
   if (!queue || sessionId !== queue.voice.voiceState?.sessionId) {
     return;
