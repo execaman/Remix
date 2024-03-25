@@ -15,6 +15,11 @@ export default async (
     | Queue
     | undefined;
 
+  const sessionId =
+    idParts[idParts.length - 1] === queue?.voice.voiceState?.sessionId ?
+      (idParts.pop() as string)
+    : null;
+
   const customId = idParts.join("_");
 
   if (request === "message") {
@@ -40,15 +45,9 @@ export default async (
     return;
   }
 
-  const sessionId = idParts.pop() as string;
-
-  if (!queue || sessionId !== queue.voice.voiceState?.sessionId) {
-    return;
-  }
-
   if (
     !interaction.member.voice.channel ||
-    queue.voice.channelId !== interaction.member.voice.channelId
+    (queue && queue.voice.channelId !== interaction.member.voice.channelId)
   ) {
     await interaction.reply({
       ephemeral: true,
@@ -58,6 +57,10 @@ export default async (
         )
       ]
     });
+    return;
+  }
+
+  if (!queue || !sessionId) {
     return;
   }
 

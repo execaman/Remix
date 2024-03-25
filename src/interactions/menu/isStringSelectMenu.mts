@@ -7,73 +7,69 @@ export default async (
   client: Remix,
   interaction: Discord.StringSelectMenuInteraction<"cached">
 ) => {
-  if (!interaction.member.voice.channel) {
-    await interaction.reply({
-      ephemeral: true,
-      embeds: [client.errorEmbed("You must be in a voice channel")]
-    });
-    return;
-  }
-
   const queue = client.player.getQueue(interaction.guildId) as
     | Queue
     | undefined;
 
-  if (queue && queue.voice.channelId !== interaction.member.voice.channelId) {
+  if (
+    !interaction.member.voice.channel ||
+    (queue && queue.voice.channelId !== interaction.member.voice.channelId)
+  ) {
     await interaction.reply({
       ephemeral: true,
       embeds: [
-        client.errorEmbed("You must join my voice channel").setFooter({
-          text: "The player is active in a different voice channel",
-          iconURL: client.user.displayAvatarURL()
-        })
+        client.errorEmbed(
+          `You must be in ${!interaction.member.voice.channel ? "a" : "my"} voice channel`
+        )
       ]
     });
     return;
   }
 
-  if (interaction.customId === "player_search") {
-    await interaction.deferUpdate();
-    const songs = interaction.values;
-    try {
-      const source =
-        songs.length === 1 ?
-          songs[0]
-        : await client.player.createCustomPlaylist(songs, {
-            member: interaction.member,
-            properties: { name: `Playlist from Search` },
-            parallel: true
-          });
-      await client.player.play(interaction.member.voice.channel, source, {
-        member: interaction.member,
-        textChannel:
-          queue ?
-            queue.textChannel!
-          : interaction.channel || interaction.member.voice.channel
-      });
-      await interaction.deleteReply();
-    } catch {
-      await interaction.editReply({
-        embeds: [client.errorEmbed()],
-        components: []
-      });
+  const idParts = interaction.customId.split("_");
+  const request = idParts.shift() as string;
+
+  const sessionId =
+    idParts[idParts.length - 1] === queue?.voice.voiceState?.sessionId ?
+      (idParts.pop() as string)
+    : null;
+
+  const customId = idParts.join("_");
+
+  if (request === "player") {
+    if (customId === "search") {
+      await interaction.deferUpdate();
+      const songs = interaction.values;
+      try {
+        const source =
+          songs.length === 1 ?
+            songs[0]
+          : await client.player.createCustomPlaylist(songs, {
+              member: interaction.member,
+              properties: { name: `Playlist from Search` },
+              parallel: true
+            });
+        await client.player.play(interaction.member.voice.channel, source, {
+          member: interaction.member,
+          textChannel:
+            queue ?
+              queue.textChannel!
+            : interaction.channel || interaction.member.voice.channel
+        });
+        await interaction.deleteReply();
+      } catch {
+        await interaction.editReply({
+          embeds: [client.errorEmbed()],
+          components: []
+        });
+      }
     }
     return;
   }
 
-  if (!queue) {
+  if (!queue || !sessionId) {
     return;
   }
-
-  const idParts = interaction.customId.split("_");
-  const sessionId = idParts.pop() as string;
-
-  if (sessionId !== queue.voice.voiceState?.sessionId) {
-    return;
-  }
-
-  const request = idParts.shift() as string;
-  const customId = idParts.join("_");
 
   const lastAction = (text: string) => ({
     icon: interaction.member.displayAvatarURL(),

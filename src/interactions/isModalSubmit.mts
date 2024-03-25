@@ -7,91 +7,87 @@ export default async (
   client: Remix,
   interaction: Discord.ModalSubmitInteraction<"cached">
 ) => {
-  if (!interaction.member.voice.channel) {
-    await interaction.reply({
-      ephemeral: true,
-      embeds: [client.errorEmbed("You must be in a voice channel")]
-    });
-    return;
-  }
-
   const queue = client.player.getQueue(interaction.guildId) as
     | Queue
     | undefined;
 
-  if (queue && queue.voice.channelId !== interaction.member.voice.channelId) {
+  if (
+    !interaction.member.voice.channel ||
+    (queue && queue.voice.channelId !== interaction.member.voice.channelId)
+  ) {
     await interaction.reply({
       ephemeral: true,
       embeds: [
-        client.errorEmbed("You must join my voice channel").setFooter({
-          text: "The player is active in a different voice channel",
-          iconURL: client.user.displayAvatarURL()
-        })
+        client.errorEmbed(
+          `You must be in ${!interaction.member.voice.channel ? "a" : "my"} voice channel`
+        )
       ]
     });
     return;
   }
 
-  if (interaction.customId === "player_search") {
-    await interaction.deferReply({ ephemeral: true });
-    const query = interaction.fields.getTextInputValue("query");
-    try {
-      let url: URL = null!;
+  const idParts = interaction.customId.split("_");
+  const request = idParts.shift() as string;
+
+  const sessionId =
+    idParts[idParts.length - 1] === queue?.voice.voiceState?.sessionId ?
+      (idParts.pop() as string)
+    : null;
+
+  const customId = idParts.join("_");
+
+  if (request === "player") {
+    if (customId === "search") {
+      await interaction.deferReply({ ephemeral: true });
+      const query = interaction.fields.getTextInputValue("query");
       try {
-        url = new URL(query);
-      } catch {}
-      if (url) {
-        await client.player.play(interaction.member.voice.channel, url.href, {
-          member: interaction.member,
-          textChannel:
-            queue?.textChannel ||
-            interaction.channel ||
-            interaction.member.voice.channel
+        let url: URL = null!;
+        try {
+          url = new URL(query);
+        } catch {}
+        if (url) {
+          await client.player.play(interaction.member.voice.channel, url.href, {
+            member: interaction.member,
+            textChannel:
+              queue?.textChannel ||
+              interaction.channel ||
+              interaction.member.voice.channel
+          });
+          await interaction.deleteReply();
+          return;
+        }
+        const results = await client.player.search(query, { limit: 10 });
+        const options = results.map((song) => {
+          const item = client.util.formatSong(song);
+          return new Discord.StringSelectMenuOptionBuilder()
+            .setEmoji(client.config.emoji.clock)
+            .setLabel(item.name)
+            .setDescription(item.description)
+            .setValue(item.url);
         });
-        await interaction.deleteReply();
-        return;
+        await interaction.editReply({
+          components: [
+            new Discord.ActionRowBuilder<Discord.StringSelectMenuBuilder>().setComponents(
+              new Discord.StringSelectMenuBuilder()
+                .setCustomId("player_search")
+                .setPlaceholder("Select Songs to Play")
+                .setOptions(options)
+                .setMaxValues(options.length)
+            )
+          ]
+        });
+      } catch {
+        await interaction.editReply({
+          embeds: [client.errorEmbed()]
+        });
       }
-      const results = await client.player.search(query, { limit: 10 });
-      const options = results.map((song) => {
-        const item = client.util.formatSong(song);
-        return new Discord.StringSelectMenuOptionBuilder()
-          .setEmoji(client.config.emoji.clock)
-          .setLabel(item.name)
-          .setDescription(item.description)
-          .setValue(item.url);
-      });
-      await interaction.editReply({
-        components: [
-          new Discord.ActionRowBuilder<Discord.StringSelectMenuBuilder>().setComponents(
-            new Discord.StringSelectMenuBuilder()
-              .setCustomId("player_search")
-              .setPlaceholder("Select Songs to Play")
-              .setOptions(options)
-              .setMaxValues(options.length)
-          )
-        ]
-      });
-    } catch {
-      await interaction.editReply({
-        embeds: [client.errorEmbed()]
-      });
     }
     return;
   }
 
-  if (!queue) {
+  if (!queue || !sessionId) {
     return;
   }
-
-  const idParts = interaction.customId.split("_");
-  const sessionId = idParts.pop() as string;
-
-  if (sessionId !== queue.voice.voiceState?.sessionId) {
-    return;
-  }
-
-  const request = idParts.shift() as string;
-  const customId = idParts.join("_");
 
   const lastAction = (text: string) => ({
     icon: interaction.member.displayAvatarURL(),
