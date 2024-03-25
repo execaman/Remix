@@ -219,30 +219,19 @@ export default class MusicRequest {
       if (mode === "play") {
         await i.deferReply({ ephemeral: true });
 
-        if (!i.member.voice.channel) {
-          await i.editReply({
-            embeds: [
-              this.interaction.client.errorEmbed(
-                "You must be in a voice channel"
-              )
-            ]
-          });
-          return;
-        }
-
         const queue = this.interaction.client.player.getQueue(
           this.interaction.guildId
         );
 
-        if (queue && queue.voice.channelId !== i.member.voice.channelId) {
+        if (
+          !i.member.voice.channel ||
+          (queue && queue.voice.channelId !== i.member.voice.channelId)
+        ) {
           await i.editReply({
             embeds: [
-              this.interaction.client
-                .errorEmbed("You must be in my voice channel")
-                .setFooter({
-                  text: "The player is active in a different voice channel",
-                  iconURL: this.interaction.client.user.displayAvatarURL()
-                })
+              this.interaction.client.errorEmbed(
+                `You must be in ${!i.member.voice.channel ? "a" : "my"} voice channel`
+              )
             ]
           });
           return;

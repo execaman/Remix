@@ -42,14 +42,35 @@ export default async (
         ]
       });
     } else if (customId === "play") {
+      if (!interaction.member.voice.channel) {
+        await interaction.reply({
+          ephemeral: true,
+          embeds: [client.errorEmbed("You must be in a voice channel")]
+        });
+        return;
+      }
       await interaction.showModal(client.playerSearchModal());
     }
     return;
   }
 
+  if (!queue || !sessionId) {
+    await interaction.reply({
+      ephemeral: true,
+      embeds: [
+        client.errorEmbed(
+          !queue ?
+            "The player is inactive at the moment"
+          : "This session has expired. Please join a new one"
+        )
+      ]
+    });
+    return;
+  }
+
   if (
     !interaction.member.voice.channel ||
-    (queue && queue.voice.channelId !== interaction.member.voice.channelId)
+    queue.voice.channelId !== interaction.member.voice.channelId
   ) {
     await interaction.reply({
       ephemeral: true,
@@ -59,10 +80,6 @@ export default async (
         )
       ]
     });
-    return;
-  }
-
-  if (!queue || !sessionId) {
     return;
   }
 

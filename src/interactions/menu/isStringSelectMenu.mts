@@ -70,6 +70,16 @@ export default async (
   }
 
   if (!queue || !sessionId) {
+    await interaction.reply({
+      ephemeral: true,
+      embeds: [
+        client.errorEmbed(
+          !queue ?
+            "The player is inactive at the moment"
+          : "This session has expired. Please join a new one"
+        )
+      ]
+    });
     return;
   }
 
