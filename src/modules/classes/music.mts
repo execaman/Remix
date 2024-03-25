@@ -330,7 +330,7 @@ export default class MusicRequest {
     );
 
     const menu = new Discord.StringSelectMenuBuilder()
-      .setCustomId(this.interaction.id.concat(`_menu_${mode}`))
+      .setCustomId(this.interaction.user.id.concat(`_menu_${mode}`))
       .setPlaceholder(
         `Select Songs to ${
           mode === "add" ? "Add"
@@ -364,19 +364,19 @@ export default class MusicRequest {
   userSelectButtons(mode: InteractionMode = "play") {
     return new Discord.ActionRowBuilder<Discord.ButtonBuilder>().setComponents(
       new Discord.ButtonBuilder()
-        .setCustomId(this.interaction.id.concat("_button_add"))
+        .setCustomId(this.interaction.user.id.concat("_button_add"))
         .setStyle(Discord.ButtonStyle.Secondary)
         .setLabel("Add")
         .setDisabled(this.data.songs.length === 25),
 
       new Discord.ButtonBuilder()
-        .setCustomId(this.interaction.id.concat("_button_play"))
+        .setCustomId(this.interaction.user.id.concat("_button_play"))
         .setStyle(Discord.ButtonStyle.Secondary)
         .setLabel("Play")
         .setDisabled(mode === "play" || this.data.songs.length === 0),
 
       new Discord.ButtonBuilder()
-        .setCustomId(this.interaction.id.concat("_button_remove"))
+        .setCustomId(this.interaction.user.id.concat("_button_remove"))
         .setStyle(Discord.ButtonStyle.Secondary)
         .setLabel("Remove")
         .setDisabled(mode === "remove" || this.data.songs.length === 0)
@@ -385,7 +385,7 @@ export default class MusicRequest {
 
   userSearchModal() {
     return new Discord.ModalBuilder()
-      .setCustomId(this.interaction.id.concat("_search"))
+      .setCustomId(this.interaction.user.id.concat("_search"))
       .setTitle("Search")
       .setComponents(
         new Discord.ActionRowBuilder<Discord.TextInputBuilder>().setComponents(
@@ -402,12 +402,12 @@ export default class MusicRequest {
   userSongOptions() {
     return new Discord.ActionRowBuilder<Discord.ButtonBuilder>().setComponents(
       new Discord.ButtonBuilder()
-        .setCustomId(this.interaction.id.concat("_song"))
+        .setCustomId(this.interaction.user.id.concat("_song"))
         .setStyle(Discord.ButtonStyle.Secondary)
         .setLabel("Remove"),
 
       new Discord.ButtonBuilder()
-        .setCustomId(this.interaction.id.concat("_manage"))
+        .setCustomId(this.interaction.user.id.concat("_manage"))
         .setStyle(Discord.ButtonStyle.Secondary)
         .setLabel("Manage Playlist")
     );

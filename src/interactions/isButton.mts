@@ -8,6 +8,8 @@ export default async (
   client: Remix,
   interaction: Discord.ButtonInteraction<"cached">
 ) => {
+  if (interaction.customId.startsWith(interaction.user.id)) return;
+
   const idParts = interaction.customId.split("_");
   const request = idParts.shift() as string;
 

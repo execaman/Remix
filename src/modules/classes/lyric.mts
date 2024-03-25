@@ -206,7 +206,7 @@ export default class LyricRequest {
 
   languageCodeModal() {
     return new Discord.ModalBuilder()
-      .setCustomId(this.interaction.id.concat("_translate"))
+      .setCustomId(this.interaction.user.id.concat("_translate"))
       .setTitle("Translate")
       .setComponents(
         new Discord.ActionRowBuilder<Discord.TextInputBuilder>().setComponents(
@@ -224,25 +224,25 @@ export default class LyricRequest {
   lyricNav() {
     return new Discord.ActionRowBuilder<Discord.ButtonBuilder>().setComponents(
       new Discord.ButtonBuilder()
-        .setCustomId(this.interaction.id.concat("_firstItem"))
+        .setCustomId(this.interaction.user.id.concat("_firstItem"))
         .setStyle(Discord.ButtonStyle.Secondary)
         .setEmoji(this.interaction.client.config.emoji.previous)
         .setDisabled(!this.menu.previous),
 
       new Discord.ButtonBuilder()
-        .setCustomId(this.interaction.id.concat("_previousItem"))
+        .setCustomId(this.interaction.user.id.concat("_previousItem"))
         .setStyle(Discord.ButtonStyle.Secondary)
         .setEmoji(this.interaction.client.config.emoji.reverse)
         .setDisabled(!this.menu.previous),
 
       new Discord.ButtonBuilder()
-        .setCustomId(this.interaction.id.concat("_nextItem"))
+        .setCustomId(this.interaction.user.id.concat("_nextItem"))
         .setStyle(Discord.ButtonStyle.Secondary)
         .setEmoji(this.interaction.client.config.emoji.forward)
         .setDisabled(!this.menu.next),
 
       new Discord.ButtonBuilder()
-        .setCustomId(this.interaction.id.concat("_lastItem"))
+        .setCustomId(this.interaction.user.id.concat("_lastItem"))
         .setStyle(Discord.ButtonStyle.Secondary)
         .setEmoji(this.interaction.client.config.emoji.next)
         .setDisabled(!this.menu.next)
@@ -257,12 +257,12 @@ export default class LyricRequest {
         .setURL(this.data.source.url),
 
       new Discord.ButtonBuilder()
-        .setCustomId(this.interaction.id.concat("_translate"))
+        .setCustomId(this.interaction.user.id.concat("_translate"))
         .setStyle(Discord.ButtonStyle.Secondary)
         .setLabel("Translate"),
 
       new Discord.ButtonBuilder()
-        .setCustomId(this.interaction.id.concat("_info"))
+        .setCustomId(this.interaction.user.id.concat("_info"))
         .setStyle(Discord.ButtonStyle.Secondary)
         .setLabel("More Info")
         .setDisabled(!this.data.info)
@@ -273,7 +273,7 @@ export default class LyricRequest {
     const components = [
       new Discord.ActionRowBuilder<Discord.ButtonBuilder>().setComponents(
         new Discord.ButtonBuilder()
-          .setCustomId(this.interaction.id.concat("_back"))
+          .setCustomId(this.interaction.user.id.concat("_back"))
           .setStyle(Discord.ButtonStyle.Secondary)
           .setLabel("Back"),
 
@@ -283,7 +283,7 @@ export default class LyricRequest {
           .setURL(this.data.source.url),
 
         new Discord.ButtonBuilder()
-          .setCustomId(this.interaction.id.concat("_info"))
+          .setCustomId(this.interaction.user.id.concat("_info"))
           .setStyle(Discord.ButtonStyle.Secondary)
           .setLabel("More Info")
           .setDisabled(true)
@@ -309,12 +309,12 @@ export default class LyricRequest {
   lyricTranslate() {
     return new Discord.ActionRowBuilder<Discord.ButtonBuilder>().setComponents(
       new Discord.ButtonBuilder()
-        .setCustomId(this.interaction.id.concat("_back"))
+        .setCustomId(this.interaction.user.id.concat("_back"))
         .setStyle(Discord.ButtonStyle.Secondary)
         .setLabel("Back"),
 
       new Discord.ButtonBuilder()
-        .setCustomId(this.interaction.id.concat("_language"))
+        .setCustomId(this.interaction.user.id.concat("_language"))
         .setStyle(Discord.ButtonStyle.Secondary)
         .setLabel("Language"),
 
