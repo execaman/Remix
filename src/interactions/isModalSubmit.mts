@@ -7,6 +7,8 @@ export default async (
   client: Remix,
   interaction: Discord.ModalSubmitInteraction<"cached">
 ) => {
+  if (interaction.customId.startsWith(interaction.user.id)) return;
+
   const queue = client.player.getQueue(interaction.guildId) as
     | Queue
     | undefined;
