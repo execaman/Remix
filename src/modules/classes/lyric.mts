@@ -7,6 +7,10 @@ type Interaction =
   | Discord.ButtonInteraction<"cached">
   | Discord.ChatInputCommandInteraction<"cached">;
 
+type CollectorInteraction = Discord.ButtonInteraction<"cached"> & {
+  client: Remix;
+};
+
 type LyricRequestInteraction = Interaction & { client: Remix };
 
 export default class LyricRequest {
@@ -79,103 +83,102 @@ export default class LyricRequest {
     });
 
     this.collector.on("collect", async (i) => {
-      const action = i.customId.split("_").pop() as string;
+      await this.handleRequest(i as CollectorInteraction);
+    });
+  }
 
-      if (
-        ["firstItem", "previousItem", "nextItem", "lastItem"].includes(action)
-      ) {
-        await i.update({
-          embeds: [this.lyricEmbed((this.menu as any)[action] as string)],
-          components: this.lyricComponents()
-        });
-        return;
-      }
+  async handleRequest(interaction: CollectorInteraction) {
+    const action = interaction.customId.split("_").pop() as string;
 
-      if (action === "translate") {
-        await i.update({
-          components: this.lyricComponents("translate")
-        });
-        return;
-      }
-
-      if (action === "language") {
-        await i.showModal(this.languageCodeModal());
-
-        try {
-          const modal = await i.awaitModalSubmit({
-            dispose: true,
-            time: this.interaction.client.util.time.ms("01:00")
-          });
-
-          await modal.deferReply({ ephemeral: true });
-
-          const code = modal.fields.getTextInputValue("code");
-
-          try {
-            const { sentences } = await this.interaction.client.util.translate(
-              this.data.lyrics,
-              code
-            );
-
-            const pages = sentences.reduce<string[]>(
-              (total, current, index) => {
-                if (current.orig && current.trans) {
-                  const transcript = `${current.orig.trim()}\n${current.trans.trim()}`;
-
-                  if (index % 5 === 0) {
-                    total.push(transcript);
-                  } else {
-                    total[total.length - 1] = total
-                      .at(-1)!
-                      .concat(`\n\n${transcript}`);
-                  }
-                }
-                return total;
-              },
-              []
-            );
-
-            const menu = new this.interaction.client.util.menu(pages);
-
-            if (menu.currentItem!.length >= 4000) {
-              throw null;
-            }
-
-            this.menu = menu;
-
-            await i.editReply({
-              embeds: [this.lyricEmbed(this.menu.currentItem as string)],
-              components: this.lyricComponents()
-            });
-
-            await modal.deleteReply();
-          } catch {
-            await modal.editReply({
-              embeds: [this.interaction.client.errorEmbed()]
-            });
-          }
-        } catch {
-          await i.followUp({
-            embeds: [
-              this.interaction.client.errorEmbed("Interaction timed out")
-            ]
-          });
-        }
-        return;
-      }
-
-      if (action === "info") {
-        await i.update({
-          embeds: [this.lyricEmbed(this.data.info as LyricInfo[])],
-          components: this.lyricComponents("info")
-        });
-        return;
-      }
-
-      await i.update({
-        embeds: [this.lyricEmbed(this.menu.currentItem as string)],
+    if (
+      ["firstItem", "previousItem", "nextItem", "lastItem"].includes(action)
+    ) {
+      await interaction.update({
+        embeds: [this.lyricEmbed((this.menu as any)[action] as string)],
         components: this.lyricComponents()
       });
+      return;
+    }
+
+    if (action === "translate") {
+      await interaction.update({
+        components: this.lyricComponents("translate")
+      });
+      return;
+    }
+
+    if (action === "language") {
+      await interaction.showModal(this.languageCodeModal());
+
+      try {
+        const modal = await interaction.awaitModalSubmit({
+          dispose: true,
+          time: interaction.client.util.time.ms("01:00")
+        });
+
+        await modal.deferReply({ ephemeral: true });
+
+        const code = modal.fields.getTextInputValue("code");
+
+        try {
+          const { sentences } = await interaction.client.util.translate(
+            this.data.lyrics,
+            code
+          );
+
+          const pages = sentences.reduce<string[]>((total, current, index) => {
+            if (current.orig && current.trans) {
+              const transcript = `${current.orig.trim()}\n${current.trans.trim()}`;
+
+              if (index % 5 === 0) {
+                total.push(transcript);
+              } else {
+                total[total.length - 1] = total
+                  .at(-1)!
+                  .concat(`\n\n${transcript}`);
+              }
+            }
+            return total;
+          }, []);
+
+          const menu = new interaction.client.util.menu(pages);
+
+          if (menu.currentItem!.length >= 4000) {
+            throw null;
+          }
+
+          this.menu = menu;
+
+          await interaction.editReply({
+            embeds: [this.lyricEmbed(this.menu.currentItem as string)],
+            components: this.lyricComponents()
+          });
+
+          await modal.deleteReply();
+        } catch {
+          await modal.editReply({
+            embeds: [interaction.client.errorEmbed()]
+          });
+        }
+      } catch {
+        await interaction.followUp({
+          embeds: [interaction.client.errorEmbed("Interaction timed out")]
+        });
+      }
+      return;
+    }
+
+    if (action === "info") {
+      await interaction.update({
+        embeds: [this.lyricEmbed(this.data.info as LyricInfo[])],
+        components: this.lyricComponents("info")
+      });
+      return;
+    }
+
+    await interaction.update({
+      embeds: [this.lyricEmbed(this.menu.currentItem as string)],
+      components: this.lyricComponents()
     });
   }
 

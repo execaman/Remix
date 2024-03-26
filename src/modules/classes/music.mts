@@ -8,6 +8,11 @@ type Interaction =
   | Discord.ButtonInteraction<"cached">
   | Discord.ChatInputCommandInteraction<"cached">;
 
+type CollectorInteraction = (
+  | Discord.ButtonInteraction<"cached">
+  | Discord.StringSelectMenuInteraction<"cached">
+) & { client: Remix };
+
 type MusicRequestInteraction = Interaction & { client: Remix };
 
 type InteractionMode = "add" | "play" | "remove";
@@ -54,7 +59,7 @@ export default class MusicRequest {
   }
 
   async init(songExisted?: boolean) {
-    const messageBody: Discord.MessageEditOptions = {};
+    const messageBody: Discord.InteractionEditReplyOptions = {};
 
     if (typeof songExisted === "boolean") {
       messageBody.embeds = [
@@ -66,6 +71,7 @@ export default class MusicRequest {
             : "Song saved to your playlist"
           )
       ];
+
       messageBody.components = [this.userSongOptions()];
     } else {
       messageBody.components = [
@@ -88,111 +94,110 @@ export default class MusicRequest {
     });
 
     this.collector.on("collect", async (i) => {
-      const mode = i.customId.split("_").pop() as
-        | InteractionMode
-        | "song"
-        | "manage";
+      await this.handleRequest(i as CollectorInteraction);
+    });
+  }
 
-      if (i.isButton()) {
-        if (mode === "song") {
-          await i.deferUpdate();
-          const song = this.data.songs.pop() as SavedSong;
-          try {
-            await this.data.save();
-          } catch {
-            this.data.songs.push(song);
-            await i.followUp({
-              ephemeral: true,
-              embeds: [this.interaction.client.errorEmbed()]
-            });
-            return;
-          }
-          await i.editReply({
-            embeds: [],
-            components: [this.userSelectMenu(), this.userSelectButtons()]
-          });
-          await i.followUp({
+  async handleRequest(interaction: CollectorInteraction) {
+    const mode = interaction.customId.split("_").pop() as
+      | InteractionMode
+      | "song"
+      | "manage";
+
+    if (interaction.isButton()) {
+      if (mode === "song") {
+        await interaction.deferUpdate();
+
+        const song = this.data.songs.pop() as SavedSong;
+
+        try {
+          await this.data.save();
+        } catch {
+          this.data.songs.push(song);
+          await interaction.followUp({
             ephemeral: true,
+            embeds: [interaction.client.errorEmbed()]
+          });
+          return;
+        }
+
+        await interaction.editReply({
+          embeds: [],
+          components: [this.userSelectMenu(), this.userSelectButtons()]
+        });
+
+        await interaction.followUp({
+          ephemeral: true,
+          embeds: [
+            new Discord.EmbedBuilder()
+              .setColor(Discord.Colors.Yellow)
+              .setTitle("Song was removed from your playlist")
+          ]
+        });
+      } else if (mode === "manage") {
+        await interaction.update({
+          embeds: [],
+          components: [this.userSelectMenu(), this.userSelectButtons()]
+        });
+      } else if (mode === "add") {
+        if (this.data.songs.length === 25) {
+          await interaction.reply({
             embeds: [
-              new Discord.EmbedBuilder()
-                .setColor(Discord.Colors.Yellow)
-                .setTitle("Song was removed from your playlist")
+              interaction.client.errorEmbed(
+                "Your playlist has reached the max limit of 25 songs"
+              )
             ]
           });
           return;
         }
 
-        if (mode === "manage") {
-          await i.update({
-            embeds: [],
-            components: [this.userSelectMenu(), this.userSelectButtons()]
-          });
-          return;
-        }
+        await interaction.showModal(this.userSearchModal());
 
-        if (mode === "add") {
-          if (this.data.songs.length === 25) {
-            await i.reply({
-              embeds: [
-                this.interaction.client.errorEmbed(
-                  "Your playlist has reached the max limit of 25 songs"
-                )
-              ]
+        try {
+          const modal = await interaction.awaitModalSubmit({
+            time: interaction.client.util.time.ms("01:00")
+          });
+
+          await modal.deferUpdate();
+
+          const query = modal.fields.getTextInputValue("query");
+
+          try {
+            this.search = await interaction.client.player.search(query, {
+              limit: 10
+            });
+          } catch {
+            await interaction.followUp({
+              ephemeral: true,
+              embeds: [interaction.client.errorEmbed()]
             });
             return;
           }
 
-          await i.showModal(this.userSearchModal());
-
-          try {
-            const modal = await i.awaitModalSubmit({
-              time: this.interaction.client.util.time.ms("01:00")
-            });
-
-            await modal.deferUpdate();
-
-            const query = modal.fields.getTextInputValue("query");
-
-            try {
-              this.search = await this.interaction.client.player.search(query, {
-                limit: 10
-              });
-            } catch {
-              await i.followUp({
-                ephemeral: true,
-                embeds: [this.interaction.client.errorEmbed()]
-              });
-              return;
-            }
-
-            await modal.editReply({
-              components: [
-                this.userSelectMenu("add"),
-                this.userSelectButtons("add")
-              ]
-            });
-            (this.search as any) = null;
-          } catch {
-            await i.followUp({
-              ephemeral: true,
-              embeds: [
-                this.interaction.client.errorEmbed("Interaction timed out")
-              ]
-            });
-          }
-          return;
+          await modal.editReply({
+            components: [
+              this.userSelectMenu("add"),
+              this.userSelectButtons("add")
+            ]
+          });
+        } catch {
+          await interaction.followUp({
+            ephemeral: true,
+            embeds: [interaction.client.errorEmbed("Interaction timed out")]
+          });
         }
-
-        await i.update({
+      } else {
+        await interaction.update({
           components: [this.userSelectMenu(mode), this.userSelectButtons(mode)]
         });
-        return;
       }
+      return;
+    }
 
-      const indices = i.values.map(Number);
-
+    if (interaction.isStringSelectMenu()) {
+      const indices = interaction.values.map(Number);
       if (mode === "add") {
-        await i.deferUpdate();
+        await interaction.deferUpdate();
 
         const songs = indices.map((index) =>
           this.interaction.client.util.formatSong(this.search![index])
@@ -203,34 +208,30 @@ export default class MusicRequest {
           await this.data.save();
         } catch {
           this.data.songs.splice(-1 * songs.length);
-          await i.followUp({
+          await interaction.followUp({
             ephemeral: true,
-            embeds: [this.interaction.client.errorEmbed()]
+            embeds: [interaction.client.errorEmbed()]
           });
           return;
         }
 
-        await i.editReply({
+        await interaction.editReply({
           components: [this.userSelectMenu(), this.userSelectButtons()]
         });
-        return;
-      }
+      } else if (mode === "play") {
+        await interaction.deferReply({ ephemeral: true });
 
-      if (mode === "play") {
-        await i.deferReply({ ephemeral: true });
-
-        const queue = this.interaction.client.player.getQueue(
-          this.interaction.guildId
-        );
+        const queue = interaction.client.player.getQueue(interaction.guildId);
 
         if (
-          !i.member.voice.channel ||
-          (queue && queue.voice.channelId !== i.member.voice.channelId)
+          !interaction.member.voice.channel ||
+          (queue &&
+            queue.voice.channelId !== interaction.member.voice.channelId)
         ) {
-          await i.editReply({
+          await interaction.editReply({
             embeds: [
-              this.interaction.client.errorEmbed(
-                `You must be in ${!i.member.voice.channel ? "a" : "my"} voice channel`
+              interaction.client.errorEmbed(
+                `You must be in ${!interaction.member.voice.channel ? "a" : "my"} voice channel`
               )
             ]
           });
@@ -243,60 +244,64 @@ export default class MusicRequest {
           const source =
             songs.length === 1 ?
               songs[0]
-            : await this.interaction.client.player.createCustomPlaylist(songs, {
-                member: i.member,
+            : await interaction.client.player.createCustomPlaylist(songs, {
+                member: interaction.member,
                 properties: {
-                  name: `${i.member.displayName}'s Playlist`.slice(-97)
+                  name: `${interaction.member.displayName}'s Playlist`.slice(
+                    -97
+                  )
                 },
                 parallel: true
               });
 
-          await this.interaction.client.player.play(
-            i.member.voice.channel,
+          await interaction.client.player.play(
+            interaction.member.voice.channel,
             source,
             {
-              member: i.member,
+              member: interaction.member,
               textChannel:
-                queue ? queue.textChannel! : i.channel || i.member.voice.channel
+                queue ?
+                  queue.textChannel!
+                : interaction.channel || interaction.member.voice.channel
             }
           );
 
-          await i.deleteReply();
+          await interaction.deleteReply();
         } catch {
-          await i.editReply({
-            embeds: [this.interaction.client.errorEmbed()]
+          await interaction.editReply({
+            embeds: [interaction.client.errorEmbed()]
           });
         }
-        return;
-      }
+      } else if (mode === "remove") {
+        await interaction.deferUpdate();
 
-      await i.deferUpdate();
+        const songs = this.data.songs;
+        const positions = indices.sort((a, b) => b - a);
 
-      const songs = this.data.songs;
-      const positions = indices.sort((a, b) => b - a);
+        for (const position of positions) {
+          this.data.songs.splice(position, 1);
+        }
 
-      for (const position of positions) {
-        this.data.songs.splice(position, 1);
-      }
+        try {
+          await this.data.save();
+        } catch {
+          this.data.songs = songs;
+          await interaction.followUp({
+            ephemeral: true,
+            embeds: [interaction.client.errorEmbed()]
+          });
+          return;
+        }
 
-      try {
-        await this.data.save();
-      } catch {
-        this.data.songs = songs;
-        await i.followUp({
-          ephemeral: true,
-          embeds: [this.interaction.client.errorEmbed()]
+        await interaction.editReply({
+          components: [
+            this.userSelectMenu("remove"),
+            this.userSelectButtons("remove")
+          ]
         });
-        return;
       }
-
-      await i.editReply({
-        components: [
-          this.userSelectMenu("remove"),
-          this.userSelectButtons("remove")
-        ]
-      });
-    });
+      return;
+    }
   }
 
   createMenuOptions(songs: SearchResultVideo[] | SavedSong[]) {
