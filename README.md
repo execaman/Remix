@@ -62,7 +62,7 @@ Most of the settings can be configured from [`src/utility/config.mts`](./src/uti
 
 Options marked with asterisk (\*) are required to be configured
 
-- You must enable `MessageContent` intent from the discord application page if you want to use text commands. To disable text commands you must remove the `MessageContent` intent from [`src/index.mts`](./src/index.mts)
+- You must enable [`MessageContent`](https://discord.com/developers/docs/topics/gateway#message-content-intent) intent from the discord [application](https://discord.com/developers/applications) page and add the intent in [`src/client.mts`](./src/client.mts) to enable text commands
 
 - You can configure other options like [`emoji`](./src/utility/config.mts) and [`filters`](./src/utility/filters.mts)
 
