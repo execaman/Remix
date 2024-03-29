@@ -18,6 +18,7 @@ export default async (client: Remix, message: Message) => {
 
   queue.editTimer!.refresh();
   queue.editCount = 0;
+  queue.textChannel = message.channel;
 
   try {
     await queue.playerMessage.delete();
