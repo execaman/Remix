@@ -11,7 +11,7 @@ It was made to provide features that other bots in production cut off or lock be
 
 Most of them usually use [lavalink](https://github.com/lavalink-devs/Lavalink) behind the scene that doesn't support many sites, filters, longer playback pause, and also require your attention for maintenance.
 
-With [DisTube](https://github.com/skick1234/DisTube), you can play from a plenty of sites ([almost 1k!](https://github.com/yt-dlp/yt-dlp/blob/master/supportedsites.md)) with custom [ffmpeg audio filters](https://ffmpeg.org/ffmpeg-filters.html#Audio-Filters) of your own!
+With [DisTube](https://github.com/skick1234/DisTube), you can play from a plenty of sites ([almost 1k!](https://github.com/yt-dlp/yt-dlp/blob/master/supportedsites.md)) with custom [ffmpeg audio filters](https://ffmpeg.org/ffmpeg-filters.html#Audio-Filters) (upto 100) of your own!
 
 ### Development Status
 
@@ -64,7 +64,7 @@ Options marked with asterisk (\*) are required to be configured
 
 - You must enable `MessageContent` intent from the discord application page if you want to use text commands. To disable text commands you must remove the `MessageContent` intent from [`src/index.mts`](./src/index.mts)
 
-- You can configure other options like `emoji` ([ComponentEmojiResolvable](https://discord.js.org/docs/packages/discord.js/14.14.1/ComponentEmojiResolvable:TypeAlias)) and `audioFilters`
+- You can configure other options like [`emoji`](./src/utility/config.mts) and [`filters`](./src/utility/filters.mts)
 
 ## Interaction
 

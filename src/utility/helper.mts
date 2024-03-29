@@ -1,4 +1,6 @@
 export * from "../modules/index.mjs";
+export * from "./filters.mjs";
+
 import { Lyricist } from "@execaman/lyricist";
 import type { Song, SearchResultVideo, RelatedSong } from "distube";
 import type { SavedSong } from "./types.mjs";

@@ -335,22 +335,25 @@ export default class Remix extends Discord.Client<true> {
 
   playerQueueFilters(queue: Queue) {
     const sessionId = queue.voice.voiceState?.sessionId;
-
     const current = queue.filters.names;
-    const filters = Object.keys(this.player.filters).slice(0, 100);
 
-    const options = filters.reduce<Discord.APISelectMenuOption[][]>(
-      (total, filter, index) => {
+    const options = this.util.filters
+      .slice(0, 100)
+      .reduce<
+        Discord.StringSelectMenuOptionBuilder[][]
+      >((total, filter, index) => {
+        const filterName = filter[0].slice(0, 100).trim();
+        const filterDescription = filter[2]?.slice(0, 100).trim();
+
         const option = new Discord.StringSelectMenuOptionBuilder()
           .setEmoji(this.config.emoji.clock)
-          .setLabel(
-            filter.length <= 3 ?
-              filter.toUpperCase()
-            : filter[0].toUpperCase().concat(filter.slice(1))
-          )
-          .setValue(filter)
-          .setDefault(current.includes(filter))
-          .toJSON();
+          .setLabel(filterName)
+          .setValue(filterName)
+          .setDefault(current.includes(filterName));
+
+        if (typeof filterDescription === "string") {
+          option.setDescription(filterDescription);
+        }
 
         if (index % 25 === 0) {
           total.push([option]);
@@ -359,9 +362,7 @@ export default class Remix extends Discord.Client<true> {
         }
 
         return total;
-      },
-      []
-    );
+      }, []);
 
     const components: (
       | Discord.ActionRowBuilder<Discord.StringSelectMenuBuilder>
@@ -614,7 +615,6 @@ export default class Remix extends Discord.Client<true> {
     const cookie = await readFile("../cookie.json", "utf-8");
 
     this.player = new DisTube(this, {
-      customFilters: config.audioFilters,
       emitAddListWhenCreatingQueue: false,
       emitAddSongWhenCreatingQueue: false,
       plugins: [
@@ -625,6 +625,8 @@ export default class Remix extends Discord.Client<true> {
       ],
       youtubeCookie: JSON.parse(cookie) as Cookie[]
     });
+
+    (this.player as any).filters = Object.fromEntries(this.util.filters);
 
     const loadAssets = async (
       path: string,
