@@ -6,7 +6,7 @@ import type { Playlist } from "distube";
 export default async (client: Remix, queue: Queue, playlist: Playlist) => {
   if (
     !queue.textChannel
-      ?.permissionsFor(client.user.id)
+      ?.permissionsFor(client.user.id, false)
       ?.has(Discord.PermissionFlagsBits.SendMessages)
   ) {
     return;

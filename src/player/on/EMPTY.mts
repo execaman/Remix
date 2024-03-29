@@ -5,7 +5,7 @@ import type { Queue } from "../../utility/types.mjs";
 export default async (client: Remix, queue: Queue) => {
   if (
     !queue.textChannel
-      ?.permissionsFor(client.user.id)
+      ?.permissionsFor(client.user.id, false)
       ?.has(Discord.PermissionFlagsBits.SendMessages)
   ) {
     return;

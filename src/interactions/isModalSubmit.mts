@@ -180,7 +180,7 @@ export default async (
       queue.lastAction = lastAction(`Queue: Jump to #${position}`);
       if (
         queue.textChannel
-          ?.permissionsFor(client.user.id)
+          ?.permissionsFor(client.user.id, false)
           ?.has(Discord.PermissionFlagsBits.SendMessages)
       ) {
         await queue.textChannel.send({

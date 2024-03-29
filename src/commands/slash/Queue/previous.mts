@@ -51,7 +51,7 @@ export async function execute(
 
   if (
     queue.textChannel
-      ?.permissionsFor(client.user.id)
+      ?.permissionsFor(client.user.id, false)
       ?.has(Discord.PermissionFlagsBits.SendMessages)
   ) {
     const songName = queue.songs[0].name?.slice(0, 40);

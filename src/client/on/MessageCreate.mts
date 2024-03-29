@@ -12,7 +12,7 @@ export default async (client: Remix, message: Message) => {
   }
 
   message.repliable = !!message.channel
-    .permissionsFor(client.user.id)
+    .permissionsFor(client.user.id, false)
     ?.has(Discord.PermissionFlagsBits.SendMessages);
 
   await Promise.allSettled(

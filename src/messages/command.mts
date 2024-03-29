@@ -52,7 +52,7 @@ export default async (client: Remix, message: Message) => {
 
   if ("permissions" in command.data || "subcommands" in command.data) {
     const getPerms = async (id: string) => {
-      const channel = message.channel.permissionsFor(id);
+      const channel = message.channel.permissionsFor(id, false);
       const { permissions } = await message.guild.members.fetch(id);
       return !channel ? permissions : permissions.add(channel);
     };

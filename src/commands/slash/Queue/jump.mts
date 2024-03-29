@@ -58,7 +58,7 @@ export async function execute(
 
   if (
     queue.textChannel
-      ?.permissionsFor(client.user.id)
+      ?.permissionsFor(client.user.id, false)
       ?.has(Discord.PermissionFlagsBits.SendMessages)
   ) {
     await queue.textChannel.send({

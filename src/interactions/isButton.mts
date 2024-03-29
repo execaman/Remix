@@ -120,7 +120,7 @@ export default async (
       queue.lastAction = lastAction(`Play Previous`);
       if (
         queue.textChannel
-          ?.permissionsFor(client.user.id)
+          ?.permissionsFor(client.user.id, false)
           ?.has(Discord.PermissionFlagsBits.SendMessages)
       ) {
         const songName = queue.songs[0].name?.slice(0, 40);
@@ -150,7 +150,7 @@ export default async (
       queue.lastAction = lastAction(`Play Next`);
       if (
         queue.textChannel
-          ?.permissionsFor(client.user.id)
+          ?.permissionsFor(client.user.id, false)
           ?.has(Discord.PermissionFlagsBits.SendMessages)
       ) {
         const songName = queue.songs[0].name?.slice(0, 40);
