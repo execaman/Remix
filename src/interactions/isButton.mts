@@ -200,7 +200,6 @@ export default async (
               .setStyle(Discord.TextInputStyle.Short)
               .setLabel("Time")
               .setPlaceholder("Enter time (-30, 03:45, +30, etc)")
-              .setMinLength(3)
               .setMaxLength(8)
               .setRequired(true)
           )
