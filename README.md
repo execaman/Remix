@@ -117,7 +117,9 @@ Don't worry, you'll get used to the interface over time if you really treat it l
 
 ## Filters
 
-![Filter Manager](./img/filtermanager.png)
+![Filter Manager (Old)](./img/filters.png)
+
+![Filter Manager (New)](./img/filters1.png)
 
 ## Queue Management
 
