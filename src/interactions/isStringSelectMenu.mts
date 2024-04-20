@@ -1,7 +1,7 @@
 import Discord from "discord.js";
-import type Remix from "../../client.mjs";
+import type Remix from "../client.mjs";
 import type { Song } from "distube";
-import type { Queue } from "../../utility/types.mjs";
+import type { Queue } from "../utility/types.mjs";
 
 export default async (
   client: Remix,
@@ -9,9 +9,7 @@ export default async (
 ) => {
   if (interaction.customId.startsWith(interaction.user.id)) return;
 
-  const queue = client.player.getQueue(interaction.guildId) as
-    | Queue
-    | undefined;
+  const queue = client.player.getQueue(interaction.guildId) as Queue | undefined;
 
   if (
     !interaction.member.voice.channel ||
@@ -54,9 +52,7 @@ export default async (
         await client.player.play(interaction.member.voice.channel, source, {
           member: interaction.member,
           textChannel:
-            queue ?
-              queue.textChannel!
-            : interaction.channel || interaction.member.voice.channel
+            queue ? queue.textChannel! : interaction.channel || interaction.member.voice.channel
         });
         await interaction.deleteReply();
       } catch {
@@ -92,16 +88,12 @@ export default async (
   if (request === "queue") {
     if (customId.startsWith("filters")) {
       const current = interaction.values;
-      const options = interaction.component.options.map(
-        (option) => option.value
-      );
+      const options = interaction.component.options.map((option) => option.value);
 
       if (current.length === 0) {
         queue.filters.remove(options);
       } else {
-        const filters = queue.filters.names.filter((filter) =>
-          options.includes(filter)
-        );
+        const filters = queue.filters.names.filter((filter) => options.includes(filter));
 
         const remove = filters.filter((filter) => !current.includes(filter));
         if (remove.length > 0) {
@@ -122,28 +114,36 @@ export default async (
       return;
     } else if (customId.startsWith("menu")) {
       await interaction.deferUpdate();
+
       const indices = interaction.values.map(Number);
+
       let [state, action, page] = idParts.slice(1) as [
         "previous" | "current" | "related",
         "add" | "move" | "remove",
         number
       ];
+
       page = Number(page);
+
       const items = interaction.message.embeds[0].description!.match(
         /(?<=\()(.+)(?=\))/g
       ) as string[];
+
       const verifyItem = (index: number) => {
         const offset = state === "current" ? 1 : 0;
         const url = items[index - (page - 1) * 25 - offset];
+
         return (
           state === "previous" ? queue.previousSongs[index]?.url === url
           : state === "current" ? queue.songs[index]?.url === url
           : queue.songs[0].related[index]?.url === url
         );
       };
+
       if (state === "related") {
         const relatedSongs = queue.songs[0].related;
         const songs: string[] = [];
+
         for (const index of indices) {
           if (verifyItem(index)) {
             songs.push(relatedSongs[index].url);
@@ -151,6 +151,7 @@ export default async (
             songs.push(items[index]);
           }
         }
+
         try {
           const source =
             songs.length === 1 ?
@@ -163,9 +164,7 @@ export default async (
           await client.player.play(interaction.member.voice.channel, source, {
             member: interaction.member,
             textChannel:
-              queue.textChannel ||
-              interaction.channel ||
-              interaction.member.voice.channel
+              queue.textChannel || interaction.channel || interaction.member.voice.channel
           });
         } catch {
           await interaction.followUp({
@@ -177,6 +176,7 @@ export default async (
       } else if (action === "move") {
         const songs: Song[] = [];
         const positions = indices.sort((a, b) => b - a);
+
         for (const position of positions) {
           if (!verifyItem(position)) {
             continue;
@@ -187,6 +187,7 @@ export default async (
             songs.push(queue.songs.splice(position, 1)[0]);
           }
         }
+
         if (songs.length === 0) {
           await interaction.followUp({
             ephemeral: true,
@@ -194,22 +195,25 @@ export default async (
           });
           return;
         }
+
         songs.reverse();
+
         if (state === "previous") {
           queue.songs.push(...songs);
         } else {
           queue.songs.splice(1, 0, ...songs);
         }
+
         queue.lastAction = lastAction(
           `Queue: Move ${state === "previous" ? "Previous" : "Current"} Songs`
         );
       } else if (action === "remove") {
         const getLength = () =>
-          state === "previous" ?
-            queue.previousSongs.length
-          : queue.songs.length;
+          state === "previous" ? queue.previousSongs.length : queue.songs.length;
+
         const previousLength = getLength();
         const positions = indices.sort((a, b) => b - a);
+
         for (const position of positions) {
           if (!verifyItem(position)) {
             continue;
@@ -220,15 +224,15 @@ export default async (
             queue.songs.splice(position, 1);
           }
         }
+
         if (previousLength !== getLength()) {
           queue.lastAction = lastAction(
             `Queue: Remove ${state === "previous" ? "Previous" : "Current"} Songs`
           );
         }
       }
-      await interaction.editReply(
-        client.playerQueueMenu(queue, state, action, page)
-      );
+
+      await interaction.editReply(client.playerQueueMenu(queue, state, action, page));
       return;
     }
     return;

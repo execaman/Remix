@@ -1,10 +1,7 @@
 import Discord from "discord.js";
-import type Remix from "../../client.mjs";
+import type Remix from "../client.mjs";
 
-export default async (
-  client: Remix,
-  interaction: Discord.AutocompleteInteraction<"cached">
-) => {
+export default async (client: Remix, interaction: Discord.AutocompleteInteraction<"cached">) => {
   const command = client.commands.slash.get(interaction.commandName);
 
   if (

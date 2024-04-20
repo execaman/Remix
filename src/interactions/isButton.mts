@@ -4,18 +4,13 @@ import type Remix from "../client.mjs";
 import type { Queue } from "../utility/types.mjs";
 import type { IUser } from "../models/user.mjs";
 
-export default async (
-  client: Remix,
-  interaction: Discord.ButtonInteraction<"cached">
-) => {
+export default async (client: Remix, interaction: Discord.ButtonInteraction<"cached">) => {
   if (interaction.customId.startsWith(interaction.user.id)) return;
 
   const idParts = interaction.customId.split("_");
   const request = idParts.shift() as string;
 
-  const queue = client.player.getQueue(interaction.guildId) as
-    | Queue
-    | undefined;
+  const queue = client.player.getQueue(interaction.guildId) as Queue | undefined;
 
   const sessionId =
     idParts[idParts.length - 1] === queue?.voice.voiceState?.sessionId ?
@@ -89,6 +84,13 @@ export default async (
     time: interaction.createdTimestamp
   });
 
+  const alertEmbed = (description: string) =>
+    client.playerAlertEmbed({
+      icon: queue.lastAction.icon,
+      title: queue.lastAction.text,
+      description: description
+    });
+
   if (request === "player") {
     if (customId === "rewind" && queue.currentTime >= 10) {
       queue.seek(queue.currentTime - 10);
@@ -99,13 +101,8 @@ export default async (
       } else {
         queue.pause();
       }
-      queue.lastAction = lastAction(
-        `${queue.paused ? "Pause" : "Resume"} Player`
-      );
-    } else if (
-      customId === "forward" &&
-      queue.currentTime - 10 < queue.songs[0].duration
-    ) {
+      queue.lastAction = lastAction(`${queue.paused ? "Pause" : "Resume"} Player`);
+    } else if (customId === "forward" && queue.currentTime - 10 < queue.songs[0].duration) {
       queue.seek(queue.currentTime + 10);
       queue.lastAction = lastAction(`Duration: Forward`);
     } else if (customId === "volume_up" && queue.volume + 10 <= 150) {
@@ -118,58 +115,26 @@ export default async (
       });
     } else if (customId === "previous" && queue.previousSongs.length > 0) {
       queue.lastAction = lastAction(`Play Previous`);
-      if (
-        queue.textChannel
-          ?.permissionsFor(client.user.id, false)
-          ?.has(Discord.PermissionFlagsBits.SendMessages)
-      ) {
-        const songName = queue.songs[0].name?.slice(0, 40);
-        await queue.textChannel.send({
-          embeds: [
-            new Discord.EmbedBuilder()
-              .setColor(Discord.Colors.Yellow)
-              .setAuthor({
-                name: queue.lastAction.text,
-                iconURL: queue.lastAction.icon
-              })
-              .setDescription(
-                Discord.codeBlock(`Stopping '${songName || "Untitled Track"}'`)
-              )
-          ]
-        });
-      }
+      await interaction.reply({
+        embeds: [alertEmbed(`Stopping '${queue.songs[0].name?.slice(0, 40) || "Untitled Track"}'`)]
+      });
       await queue.previous();
-      return;
     } else if (customId === "stop") {
+      queue.lastAction = lastAction(`Stop Player`);
+      await interaction.reply({
+        embeds: [
+          alertEmbed(
+            `Stopping Player.. [${queue.songs.length} Track${queue.songs.length > 1 ? "s" : ""} Remaining]`
+          )
+        ]
+      });
       await queue.stop();
-      return;
-    } else if (
-      customId === "next" &&
-      (queue.autoplay || queue.songs.length > 1)
-    ) {
+    } else if (customId === "next" && (queue.autoplay || queue.songs.length > 1)) {
       queue.lastAction = lastAction(`Play Next`);
-      if (
-        queue.textChannel
-          ?.permissionsFor(client.user.id, false)
-          ?.has(Discord.PermissionFlagsBits.SendMessages)
-      ) {
-        const songName = queue.songs[0].name?.slice(0, 40);
-        await queue.textChannel.send({
-          embeds: [
-            new Discord.EmbedBuilder()
-              .setColor(Discord.Colors.Yellow)
-              .setAuthor({
-                name: queue.lastAction.text,
-                iconURL: queue.lastAction.icon
-              })
-              .setDescription(
-                Discord.codeBlock(`Stopping '${songName || "Untitled Track"}'`)
-              )
-          ]
-        });
-      }
+      await interaction.reply({
+        embeds: [alertEmbed(`Stopping '${queue.songs[0].name?.slice(0, 40) || "Untitled Track"}'`)]
+      });
       await queue.skip();
-      return;
     } else if (customId === "volume_down" && queue.volume - 10 >= 10) {
       queue.setVolume(queue.volume - 10);
       queue.lastAction = lastAction(`Volume Down`);
@@ -190,46 +155,46 @@ export default async (
 
   if (request === "song") {
     if (customId === "seek") {
-      const seekModal = new Discord.ModalBuilder()
-        .setCustomId(`song_seek_${sessionId}`)
-        .setTitle("Seek")
-        .setComponents(
-          new Discord.ActionRowBuilder<Discord.TextInputBuilder>().setComponents(
-            new Discord.TextInputBuilder()
-              .setCustomId("seek")
-              .setStyle(Discord.TextInputStyle.Short)
-              .setLabel("Time")
-              .setPlaceholder("Enter time (-30, 03:45, +30, etc)")
-              .setMaxLength(8)
-              .setRequired(true)
+      await interaction.showModal(
+        new Discord.ModalBuilder()
+          .setCustomId(`song_seek_${sessionId}`)
+          .setTitle("Seek")
+          .setComponents(
+            new Discord.ActionRowBuilder<Discord.TextInputBuilder>().setComponents(
+              new Discord.TextInputBuilder()
+                .setCustomId("seek")
+                .setStyle(Discord.TextInputStyle.Short)
+                .setLabel("Time")
+                .setPlaceholder("Enter time (-30, 03:45, +30, etc)")
+                .setMaxLength(8)
+                .setRequired(true)
+            )
           )
-        );
-      await interaction.showModal(seekModal);
+      );
     } else if (customId === "volume") {
-      const volumeModal = new Discord.ModalBuilder()
-        .setCustomId(`song_volume_${sessionId}`)
-        .setTitle("Volume")
-        .setComponents(
-          new Discord.ActionRowBuilder<Discord.TextInputBuilder>().setComponents(
-            new Discord.TextInputBuilder()
-              .setCustomId("volume")
-              .setStyle(Discord.TextInputStyle.Short)
-              .setLabel("Level")
-              .setPlaceholder("Enter volume level (10 - 150)")
-              .setMinLength(2)
-              .setMaxLength(3)
-              .setRequired(true)
+      await interaction.showModal(
+        new Discord.ModalBuilder()
+          .setCustomId(`song_volume_${sessionId}`)
+          .setTitle("Volume")
+          .setComponents(
+            new Discord.ActionRowBuilder<Discord.TextInputBuilder>().setComponents(
+              new Discord.TextInputBuilder()
+                .setCustomId("volume")
+                .setStyle(Discord.TextInputStyle.Short)
+                .setLabel("Level")
+                .setPlaceholder("Enter volume level (10 - 150)")
+                .setMinLength(2)
+                .setMaxLength(3)
+                .setRequired(true)
+            )
           )
-        );
-      await interaction.showModal(volumeModal);
+      );
     } else if (customId === "lyrics") {
       await interaction.deferReply({ ephemeral: true });
       if (!queue.lyricData) {
         try {
           const song = queue.songs[0];
-          queue.lyricData = await client.util.lyrics.fetch(
-            song.name!.slice(0, 25).trim()
-          );
+          queue.lyricData = await client.util.lyrics.fetch(song.name!.slice(0, 25).trim());
           queue.lyricId = song.id as string;
         } catch {
           await interaction.editReply({
@@ -252,11 +217,7 @@ export default async (
         data = new User({ id: interaction.user.id });
       } else if (data.songs.length === 25) {
         await interaction.editReply({
-          embeds: [
-            client.errorEmbed(
-              "Your playlist has reached the max limit of 25 songs"
-            )
-          ]
+          embeds: [client.errorEmbed("Your playlist has reached the max limit of 25 songs")]
         });
         return;
       }
@@ -328,20 +289,21 @@ export default async (
         number
       ];
       if (action === "jump") {
-        const jumpModal = new Discord.ModalBuilder()
-          .setCustomId(`queue_jump_${sessionId}`)
-          .setTitle("Jump")
-          .setComponents(
-            new Discord.ActionRowBuilder<Discord.TextInputBuilder>().setComponents(
-              new Discord.TextInputBuilder()
-                .setCustomId("position")
-                .setStyle(Discord.TextInputStyle.Short)
-                .setLabel("Position")
-                .setPlaceholder("Position of that song")
-                .setRequired(true)
+        await interaction.showModal(
+          new Discord.ModalBuilder()
+            .setCustomId(`queue_jump_${sessionId}`)
+            .setTitle("Jump")
+            .setComponents(
+              new Discord.ActionRowBuilder<Discord.TextInputBuilder>().setComponents(
+                new Discord.TextInputBuilder()
+                  .setCustomId("position")
+                  .setStyle(Discord.TextInputStyle.Short)
+                  .setLabel("Position")
+                  .setPlaceholder("Position of that song")
+                  .setRequired(true)
+              )
             )
-          );
-        await interaction.showModal(jumpModal);
+        );
         return;
       }
       if (action === "add") {
@@ -357,12 +319,7 @@ export default async (
           : "previous";
       }
       await interaction.update(
-        client.playerQueueMenu(
-          queue,
-          state,
-          action as "add" | "move" | "remove",
-          page
-        )
+        client.playerQueueMenu(queue, state, action as "add" | "move" | "remove", page)
       );
     }
     if (!interaction.replied && !interaction.deferred) {

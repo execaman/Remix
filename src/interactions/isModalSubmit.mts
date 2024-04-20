@@ -3,15 +3,10 @@ import { URL } from "node:url";
 import type Remix from "../client.mjs";
 import type { Queue } from "../utility/types.mjs";
 
-export default async (
-  client: Remix,
-  interaction: Discord.ModalSubmitInteraction<"cached">
-) => {
+export default async (client: Remix, interaction: Discord.ModalSubmitInteraction<"cached">) => {
   if (interaction.customId.startsWith(interaction.user.id)) return;
 
-  const queue = client.player.getQueue(interaction.guildId) as
-    | Queue
-    | undefined;
+  const queue = client.player.getQueue(interaction.guildId) as Queue | undefined;
 
   if (
     !interaction.member.voice.channel ||
@@ -51,9 +46,7 @@ export default async (
           await client.player.play(interaction.member.voice.channel, url.href, {
             member: interaction.member,
             textChannel:
-              queue?.textChannel ||
-              interaction.channel ||
-              interaction.member.voice.channel
+              queue?.textChannel || interaction.channel || interaction.member.voice.channel
           });
           await interaction.deleteReply();
           return;
@@ -127,14 +120,10 @@ export default async (
           queue.lastAction = lastAction(`Duration: Forward ${duration}s`);
         } else if (type === "rewind" && currentTime - duration > 0) {
           queue.seek(currentTime - duration);
-          queue.lastAction = lastAction(
-            `Duration: Rewind ${Math.abs(duration)}s`
-          );
+          queue.lastAction = lastAction(`Duration: Rewind ${Math.abs(duration)}s`);
         } else if (type === "seek" && duration >= 0 && duration < maxDuration) {
           queue.seek(duration);
-          queue.lastAction = lastAction(
-            `Duration: ${client.util.time.formatDuration(duration)}`
-          );
+          queue.lastAction = lastAction(`Duration: ${client.util.time.formatDuration(duration)}`);
         } else {
           throw null;
         }
@@ -168,9 +157,7 @@ export default async (
   if (request === "queue") {
     if (customId === "jump") {
       await interaction.deferReply({ ephemeral: true });
-      const position = parseInt(
-        interaction.fields.getTextInputValue("position")
-      );
+      const position = parseInt(interaction.fields.getTextInputValue("position"));
       if (isNaN(position) || position >= queue.songs.length) {
         await interaction.editReply({
           embeds: [client.errorEmbed("Invalid position entered")]
@@ -178,20 +165,14 @@ export default async (
         return;
       }
       queue.lastAction = lastAction(`Queue: Jump to #${position}`);
-      if (
-        queue.textChannel
-          ?.permissionsFor(client.user.id, false)
-          ?.has(Discord.PermissionFlagsBits.SendMessages)
-      ) {
+      if (client.canSendMessageIn(queue.textChannel)) {
         await queue.textChannel.send({
           embeds: [
-            new Discord.EmbedBuilder()
-              .setColor(Discord.Colors.Yellow)
-              .setAuthor({
-                name: queue.lastAction.text,
-                iconURL: queue.lastAction.icon
-              })
-              .setDescription(Discord.codeBlock(`Skipping ${position} tracks`))
+            client.playerAlertEmbed({
+              icon: queue.lastAction.icon,
+              title: queue.lastAction.text,
+              description: Discord.codeBlock(`Skipping ${position} track${position > 1 ? "s" : ""}`)
+            })
           ]
         });
       }
