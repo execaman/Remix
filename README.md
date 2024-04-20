@@ -40,6 +40,12 @@ Open that directory in a code editor, or just `cd` into it
 cd Remix
 ```
 
+Install dependencies
+
+```sh
+npm install
+```
+
 Start the bot
 
 ```sh
