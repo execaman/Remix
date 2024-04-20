@@ -6,10 +6,7 @@ export const data = new Discord.SlashCommandBuilder()
   .setName("seek")
   .setDescription("play from a time in audio playback")
   .addStringOption((duration) =>
-    duration
-      .setName("duration")
-      .setDescription("like -30, 03:45, +30")
-      .setRequired(true)
+    duration.setName("duration").setDescription("like -30, 03:45, +30").setRequired(true)
   );
 
 export async function execute(
@@ -18,9 +15,7 @@ export async function execute(
 ) {
   await interaction.deferReply({ ephemeral: true });
 
-  const queue = client.player.getQueue(interaction.guildId) as
-    | Queue
-    | undefined;
+  const queue = client.player.getQueue(interaction.guildId) as Queue | undefined;
 
   if (!queue) {
     await interaction.editReply({
@@ -64,17 +59,19 @@ export async function execute(
     if (isNaN(duration)) {
       throw null;
     }
+
     if (type === "forward" && currentTime + duration < maxDuration) {
       queue.seek(currentTime + duration);
+
       queue.lastAction = lastAction(`Duration: Forward ${duration}s`);
     } else if (type === "rewind" && currentTime - duration > 0) {
       queue.seek(currentTime - duration);
+
       queue.lastAction = lastAction(`Duration: Rewind ${Math.abs(duration)}s`);
     } else if (type === "seek" && duration >= 0 && duration < maxDuration) {
       queue.seek(duration);
-      queue.lastAction = lastAction(
-        `Duration: ${client.util.time.formatDuration(duration)}`
-      );
+
+      queue.lastAction = lastAction(`Duration: ${client.util.time.formatDuration(duration)}`);
     } else {
       throw null;
     }

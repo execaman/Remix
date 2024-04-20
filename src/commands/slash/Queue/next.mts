@@ -12,17 +12,13 @@ export async function execute(
 ) {
   await interaction.deferReply({ ephemeral: true });
 
-  const queue = client.player.getQueue(interaction.guildId) as
-    | Queue
-    | undefined;
+  const queue = client.player.getQueue(interaction.guildId) as Queue | undefined;
 
   if (!queue || (!queue.autoplay && queue.songs.length === 1)) {
     await interaction.editReply({
       embeds: [
         client.errorEmbed(
-          !queue ?
-            "The player is inactive at the moment"
-          : "There are no songs ahead in Queue"
+          !queue ? "The player is inactive at the moment" : "There are no songs ahead in Queue"
         )
       ]
     });
@@ -49,23 +45,16 @@ export async function execute(
     time: interaction.createdTimestamp
   };
 
-  if (
-    queue.textChannel
-      ?.permissionsFor(client.user.id, false)
-      ?.has(Discord.PermissionFlagsBits.SendMessages)
-  ) {
-    const songName = queue.songs[0].name?.slice(0, 40);
+  if (client.canSendMessageIn(queue.textChannel)) {
     await queue.textChannel.send({
       embeds: [
-        new Discord.EmbedBuilder()
-          .setColor(Discord.Colors.Yellow)
-          .setAuthor({
-            name: queue.lastAction.text,
-            iconURL: queue.lastAction.icon
-          })
-          .setDescription(
-            Discord.codeBlock(`Stopping '${songName || "Untitled Track"}'`)
+        client.playerAlertEmbed({
+          icon: queue.lastAction.icon,
+          title: queue.lastAction.text,
+          description: Discord.codeBlock(
+            `Stopping '${queue.songs[0].name?.slice(0, 40) || "Untitled Track"}'`
           )
+        })
       ]
     });
   }

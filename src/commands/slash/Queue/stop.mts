@@ -12,9 +12,7 @@ export async function execute(
 ) {
   await interaction.deferReply({ ephemeral: true });
 
-  const queue = client.player.getQueue(interaction.guildId) as
-    | Queue
-    | undefined;
+  const queue = client.player.getQueue(interaction.guildId) as Queue | undefined;
 
   if (!queue) {
     await interaction.editReply({
@@ -40,16 +38,13 @@ export async function execute(
   await queue.stop();
   await interaction.deleteReply();
 
-  if (
-    queue.textChannel
-      ?.permissionsFor(client.user.id, false)
-      ?.has(Discord.PermissionFlagsBits.SendMessages)
-  ) {
+  if (client.canSendMessageIn(queue.textChannel)) {
     await queue.textChannel.send({
       embeds: [
-        new Discord.EmbedBuilder().setColor(Discord.Colors.Yellow).setAuthor({
-          name: `| Stop Player`,
-          iconURL: interaction.member.displayAvatarURL()
+        client.playerAlertEmbed({
+          icon: interaction.member.displayAvatarURL(),
+          title: `${interaction.member.displayName}: Stop Player`,
+          description: `Stopping Player.. [${queue.songs.length} Track${queue.songs.length > 1 ? "s" : ""} Remaining]`
         })
       ]
     });

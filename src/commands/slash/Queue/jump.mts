@@ -19,18 +19,14 @@ export async function execute(
 ) {
   await interaction.deferReply({ ephemeral: true });
 
-  const queue = client.player.getQueue(interaction.guildId) as
-    | Queue
-    | undefined;
+  const queue = client.player.getQueue(interaction.guildId) as Queue | undefined;
 
   const position = interaction.options.getInteger("position") as number;
 
   if (!queue || position >= queue.songs.length) {
     await interaction.editReply({
       embeds: [
-        client.errorEmbed(
-          !queue ? "The player is inactive at the moment" : "Invalid position"
-        )
+        client.errorEmbed(!queue ? "The player is inactive at the moment" : "Invalid position")
       ]
     });
     return;
@@ -56,20 +52,14 @@ export async function execute(
     time: interaction.createdTimestamp
   };
 
-  if (
-    queue.textChannel
-      ?.permissionsFor(client.user.id, false)
-      ?.has(Discord.PermissionFlagsBits.SendMessages)
-  ) {
+  if (client.canSendMessageIn(queue.textChannel)) {
     await queue.textChannel.send({
       embeds: [
-        new Discord.EmbedBuilder()
-          .setColor(Discord.Colors.Yellow)
-          .setAuthor({
-            name: queue.lastAction.text,
-            iconURL: queue.lastAction.icon
-          })
-          .setDescription(Discord.codeBlock(`Skipping ${position} tracks`))
+        client.playerAlertEmbed({
+          icon: queue.lastAction.icon,
+          title: queue.lastAction.text,
+          description: Discord.codeBlock(`Skipping ${position} track${position > 1 ? "s" : ""}`)
+        })
       ]
     });
   }
