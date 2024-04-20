@@ -1,7 +1,7 @@
 import Discord from "discord.js";
 import type Remix from "../../client.mjs";
 import type { IUser } from "../../models/user.mjs";
-import type { SearchResultVideo, Song } from "distube";
+import type { SearchResultVideo } from "distube";
 import type { SavedSong } from "../../utility/types.mjs";
 
 type Interaction =
@@ -22,8 +22,7 @@ export default class MusicRequest {
   data: IUser = null!;
 
   collector: Discord.InteractionCollector<
-    | Discord.ButtonInteraction<"cached">
-    | Discord.StringSelectMenuInteraction<"cached">
+    Discord.ButtonInteraction<"cached"> | Discord.StringSelectMenuInteraction<"cached">
   > = null!;
 
   search?: SearchResultVideo[];
@@ -66,18 +65,13 @@ export default class MusicRequest {
         new Discord.EmbedBuilder()
           .setColor(Discord.Colors.Yellow)
           .setTitle(
-            songExisted ?
-              "This song exists in your playlist"
-            : "Song saved to your playlist"
+            songExisted ? "This song exists in your playlist" : "Song saved to your playlist"
           )
       ];
 
       messageBody.components = [this.userSongOptions()];
     } else {
-      messageBody.components = [
-        this.userSelectMenu(),
-        this.userSelectButtons()
-      ];
+      messageBody.components = [this.userSelectMenu(), this.userSelectButtons()];
     }
 
     const message = await this.interaction.editReply(messageBody);
@@ -86,7 +80,7 @@ export default class MusicRequest {
       Discord.ComponentType.Button | Discord.ComponentType.StringSelect
     >({
       dispose: true,
-      idle: this.interaction.client.util.time.ms("01:00")
+      idle: this.interaction.client.util.time.ms("02:00")
     });
 
     this.collector.once("end", async () => {
@@ -99,10 +93,7 @@ export default class MusicRequest {
   }
 
   async handleRequest(interaction: CollectorInteraction) {
-    const mode = interaction.customId.split("_").pop() as
-      | InteractionMode
-      | "song"
-      | "manage";
+    const mode = interaction.customId.split("_").pop() as InteractionMode | "song" | "manage";
 
     if (interaction.isButton()) {
       if (mode === "song") {
@@ -143,9 +134,7 @@ export default class MusicRequest {
         if (this.data.songs.length === 25) {
           await interaction.reply({
             embeds: [
-              interaction.client.errorEmbed(
-                "Your playlist has reached the max limit of 25 songs"
-              )
+              interaction.client.errorEmbed("Your playlist has reached the max limit of 25 songs")
             ]
           });
           return;
@@ -175,10 +164,7 @@ export default class MusicRequest {
           }
 
           await modal.editReply({
-            components: [
-              this.userSelectMenu("add"),
-              this.userSelectButtons("add")
-            ]
+            components: [this.userSelectMenu("add"), this.userSelectButtons("add")]
           });
         } catch {
           await interaction.followUp({
@@ -225,8 +211,7 @@ export default class MusicRequest {
 
         if (
           !interaction.member.voice.channel ||
-          (queue &&
-            queue.voice.channelId !== interaction.member.voice.channelId)
+          (queue && queue.voice.channelId !== interaction.member.voice.channelId)
         ) {
           await interaction.editReply({
             embeds: [
@@ -247,24 +232,16 @@ export default class MusicRequest {
             : await interaction.client.player.createCustomPlaylist(songs, {
                 member: interaction.member,
                 properties: {
-                  name: `${interaction.member.displayName}'s Playlist`.slice(
-                    -97
-                  )
+                  name: `${interaction.member.displayName}'s Playlist`.slice(-97)
                 },
                 parallel: true
               });
 
-          await interaction.client.player.play(
-            interaction.member.voice.channel,
-            source,
-            {
-              member: interaction.member,
-              textChannel:
-                queue ?
-                  queue.textChannel!
-                : interaction.channel || interaction.member.voice.channel
-            }
-          );
+          await interaction.client.player.play(interaction.member.voice.channel, source, {
+            member: interaction.member,
+            textChannel:
+              queue ? queue.textChannel! : interaction.channel || interaction.member.voice.channel
+          });
 
           await interaction.deleteReply();
         } catch {
@@ -294,10 +271,7 @@ export default class MusicRequest {
         }
 
         await interaction.editReply({
-          components: [
-            this.userSelectMenu("remove"),
-            this.userSelectButtons("remove")
-          ]
+          components: [this.userSelectMenu("remove"), this.userSelectButtons("remove")]
         });
       }
       return;
@@ -319,9 +293,7 @@ export default class MusicRequest {
   }
 
   userSelectMenu(mode: InteractionMode = "play") {
-    const options = this.createMenuOptions(
-      mode === "add" ? this.search! : this.data.songs
-    );
+    const options = this.createMenuOptions(mode === "add" ? this.search! : this.data.songs);
 
     const menu = new Discord.StringSelectMenuBuilder()
       .setCustomId(this.interaction.user.id.concat(`_menu_${mode}`))
@@ -345,14 +317,10 @@ export default class MusicRequest {
     } else {
       menu.setOptions(options);
       const limit = 25 - this.data.songs.length;
-      menu.setMaxValues(
-        mode === "add" && limit < options.length ? limit : options.length
-      );
+      menu.setMaxValues(mode === "add" && limit < options.length ? limit : options.length);
     }
 
-    return new Discord.ActionRowBuilder<Discord.StringSelectMenuBuilder>().setComponents(
-      menu
-    );
+    return new Discord.ActionRowBuilder<Discord.StringSelectMenuBuilder>().setComponents(menu);
   }
 
   userSelectButtons(mode: InteractionMode = "play") {
