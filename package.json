@@ -5,9 +5,8 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "client": "cd app && node index.mjs",
-    "test": "npm run build && npm run client",
     "format": "prettier --log-level error -w src",
-    "start": "npm i && npm run build && npm run client"
+    "start": "npm run build && npm run client"
   },
   "dependencies": {
     "@discordjs/opus": "^0.9.0",
@@ -21,6 +20,7 @@
     "discord.js": "^14.14.1",
     "distube": "^4.1.1",
     "ffmpeg-static": "^5.2.0",
+    "husky": "^9.0.11",
     "libsodium-wrappers": "^0.7.13",
     "mongoose": "^8.2.0",
     "undici": "^6.7.1",
@@ -28,8 +28,7 @@
     "zlib-sync": "^0.1.9"
   },
   "devDependencies": {
-    "@distube/ytsr": "^2.0.0",
-    "@types/node": "^20.11.20",
+    "@types/node": "^20.12.7",
     "prettier": "^3.2.5",
     "typescript": "^5.3.3"
   }
