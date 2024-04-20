@@ -15,10 +15,7 @@ import type LyricRequest from "./modules/classes/lyric.mjs";
 import type MusicRequest from "./modules/classes/music.mjs";
 import type { Cookie } from "@distube/ytdl-core";
 
-type Interaction = (
-  client: Remix,
-  interaction: Discord.Interaction<"cached">
-) => Promise<void>;
+type Interaction = (client: Remix, interaction: Discord.Interaction<"cached">) => Promise<void>;
 
 export interface SlashCommand {
   data: Discord.RESTPostAPIApplicationCommandsJSONBody;
@@ -28,11 +25,7 @@ export interface SlashCommand {
   autocomplete?: Interaction;
 }
 
-type Module = (
-  client: Remix,
-  message: Message,
-  args?: string[]
-) => Promise<void>;
+type Module = (client: Remix, message: Message, args?: string[]) => Promise<void>;
 
 export interface TextCommand {
   data: Subcommand;
@@ -66,13 +59,19 @@ export default class Remix extends Discord.Client<true> {
     return this.user.toString();
   }
 
+  canSendMessageIn(
+    channel?: Discord.GuildTextBasedChannel
+  ): channel is Discord.GuildTextBasedChannel {
+    return !!channel
+      ?.permissionsFor(this.user.id, false)
+      ?.has(Discord.PermissionFlagsBits.SendMessages);
+  }
+
   errorEmbed(description?: string) {
     return new Discord.EmbedBuilder()
       .setColor(Discord.Colors.Red)
       .setTitle(`${this.config.emoji.warn} Something went wrong`)
-      .setDescription(
-        Discord.codeBlock(description || "An unexpected error occurred")
-      );
+      .setDescription(Discord.codeBlock(description || "An unexpected error occurred"));
   }
 
   introEmbed(message: Discord.Message<true>) {
@@ -145,9 +144,7 @@ export default class Remix extends Discord.Client<true> {
         } Queue [${queue.songs.length}]`,
 
         value: Discord.codeBlock(
-          queue.paused ? "Paused" : (
-            this.repeatModeLabel(queue.repeatMode, queue.autoplay)
-          )
+          queue.paused ? "Paused" : this.repeatModeLabel(queue.repeatMode, queue.autoplay)
         ),
         inline: true
       },
@@ -164,9 +161,7 @@ export default class Remix extends Discord.Client<true> {
 
       {
         name: `${this.config.emoji.clock} Duration [${queue.songs[0].formattedDuration}]`,
-        value: Discord.codeBlock(
-          this.util.time.formatDuration(queue.currentTime)
-        ),
+        value: Discord.codeBlock(this.util.time.formatDuration(queue.currentTime)),
         inline: true
       }
     ];
@@ -193,9 +188,7 @@ export default class Remix extends Discord.Client<true> {
         typeof song.name === "string" ?
           song.name.length >= 40 ?
             song.name.slice(0, 40).concat("..")
-          : song.name.concat(
-              String.fromCharCode(10240).repeat(40 - song.name.length)
-            )
+          : song.name.concat(String.fromCharCode(10240).repeat(40 - song.name.length))
         : "Untitled Song"
       )
       .setURL(song.url)
@@ -223,9 +216,7 @@ export default class Remix extends Discord.Client<true> {
         new Discord.ButtonBuilder()
           .setCustomId(`player_play_pause_${sessionId}`)
           .setStyle(Discord.ButtonStyle.Secondary)
-          .setEmoji(
-            queue.paused ? this.config.emoji.play : this.config.emoji.pause
-          ),
+          .setEmoji(queue.paused ? this.config.emoji.play : this.config.emoji.pause),
 
         new Discord.ButtonBuilder()
           .setCustomId(`player_forward_${sessionId}`)
@@ -339,9 +330,7 @@ export default class Remix extends Discord.Client<true> {
 
     const options = this.util.filters
       .slice(0, 100)
-      .reduce<
-        Discord.StringSelectMenuOptionBuilder[][]
-      >((total, filter, index) => {
+      .reduce<Discord.StringSelectMenuOptionBuilder[][]>((total, filter, index) => {
         const filterName = filter[0].slice(0, 100).trim();
         const filterDescription = filter[2]?.slice(0, 100).trim();
 
@@ -407,11 +396,7 @@ export default class Remix extends Discord.Client<true> {
 
     const stateText = state[0].toUpperCase().concat(state.slice(1));
 
-    const [add, move, remove] = [
-      action === "add",
-      action === "move",
-      action === "remove"
-    ];
+    const [add, move, remove] = [action === "add", action === "move", action === "remove"];
 
     const lastPage =
       previous ? Math.ceil((queue.previousSongs.length || 1) / 25)
@@ -437,10 +422,7 @@ export default class Remix extends Discord.Client<true> {
     let embedDescription = "";
 
     const options = songs.map((song, index) => {
-      const item = this.util.formatSong(
-        song,
-        Math.floor(Math.random() * 5) + 50
-      );
+      const item = this.util.formatSong(song, Math.floor(Math.random() * 5) + 50);
       const itemIndex = size - 25 + index;
 
       embedDescription += `${this.config.emoji.song}${String.fromCharCode(10240)}${Discord.hyperlink(item.name.replace(/[\[\]\(\)]/g, ""), song.url)}\n`;
@@ -477,9 +459,7 @@ export default class Remix extends Discord.Client<true> {
     const [disablePrevious, disableNext] = [page === 1, page === lastPage];
 
     const components = [
-      new Discord.ActionRowBuilder<Discord.StringSelectMenuBuilder>().setComponents(
-        menu
-      ),
+      new Discord.ActionRowBuilder<Discord.StringSelectMenuBuilder>().setComponents(menu),
 
       new Discord.ActionRowBuilder<Discord.ButtonBuilder>().setComponents(
         new Discord.ButtonBuilder()
@@ -506,9 +486,7 @@ export default class Remix extends Discord.Client<true> {
           .setDisabled(disableNext),
 
         new Discord.ButtonBuilder()
-          .setCustomId(
-            `queue_menu_${state}_${action}_00${lastPage}_${sessionId}`
-          )
+          .setCustomId(`queue_menu_${state}_${action}_00${lastPage}_${sessionId}`)
           .setStyle(Discord.ButtonStyle.Secondary)
           .setEmoji(this.config.emoji.next)
           .setDisabled(disableNext)
@@ -552,13 +530,31 @@ export default class Remix extends Discord.Client<true> {
 
     if (embedDescription.length !== 0) {
       messageBody.embeds.push(
-        new Discord.EmbedBuilder()
-          .setColor(Discord.Colors.Yellow)
-          .setDescription(embedDescription)
+        new Discord.EmbedBuilder().setColor(Discord.Colors.Yellow).setDescription(embedDescription)
       );
     }
 
     return messageBody;
+  }
+
+  playerAlertEmbed({
+    icon,
+    title,
+    description,
+    color = Discord.Colors.Yellow
+  }: {
+    icon: string;
+    title: string;
+    description: string;
+    color?: Discord.ColorResolvable;
+  }) {
+    return new Discord.EmbedBuilder()
+      .setColor(color)
+      .setAuthor({
+        name: title,
+        iconURL: icon
+      })
+      .setDescription(description);
   }
 
   async handlePlayer(client: Remix, queueId: string) {
@@ -647,8 +643,7 @@ export default class Remix extends Discord.Client<true> {
       }
     };
 
-    const nameFromPath = (path: string) =>
-      path.split("/").pop()!.split(".")[0] as string;
+    const nameFromPath = (path: string) => path.split("/").pop()!.split(".")[0] as string;
 
     const checkConflict = (
       type: "model" | "slash" | "text" | "alias" | "module" | "interaction",
@@ -674,9 +669,9 @@ export default class Remix extends Discord.Client<true> {
       if (["text", "alias"].includes(type)) {
         if (this.commands.text.has(name)) {
           throw new Error(
-            type === "text" ?
-              `Text command name taken`
-            : `Alias identical to name of another command`,
+            type === "text" ? `Text command name taken` : (
+              `Alias identical to name of another command`
+            ),
             {
               cause: {
                 name: name,
@@ -732,9 +727,7 @@ export default class Remix extends Discord.Client<true> {
         });
       }
 
-      const type = path.match(
-        new RegExp(`(?<=${emitter}/)(on|once)(?=/)`)
-      )?.[0];
+      const type = path.match(new RegExp(`(?<=${emitter}/)(on|once)(?=/)`))?.[0];
 
       if (typeof type !== "string") {
         throw new Error(`Emitter is missing 'on', 'once' folders at root`);
@@ -743,15 +736,9 @@ export default class Remix extends Discord.Client<true> {
       const eventName = nameFromPath(path);
 
       if (emitter === "client") {
-        (this as any)[type](
-          (Discord.Events as any)[eventName],
-          event.bind(null, this)
-        );
+        (this as any)[type]((Discord.Events as any)[eventName], event.bind(null, this));
       } else if (emitter === "player") {
-        (this.player as any)[type](
-          (Events as any)[eventName],
-          event.bind(null, this)
-        );
+        (this.player as any)[type]((Events as any)[eventName], event.bind(null, this));
       }
     };
 
@@ -765,10 +752,7 @@ export default class Remix extends Discord.Client<true> {
       );
 
       if (command.execute?.constructor?.name !== "AsyncFunction") {
-        throw new Error(
-          "There must be an async 'execute' function in command",
-          { cause: path }
-        );
+        throw new Error("There must be an async 'execute' function in command", { cause: path });
       }
 
       let category = path.split("/").slice(-2, -1)[0];
@@ -783,10 +767,7 @@ export default class Remix extends Discord.Client<true> {
           "autocomplete" in command &&
           command.autocomplete?.constructor?.name !== "AsyncFunction"
         ) {
-          throw new Error(
-            "Command 'autocomplete' function must be asynchronous",
-            { cause: path }
-          );
+          throw new Error("Command 'autocomplete' function must be asynchronous", { cause: path });
         }
 
         this.commands.slash.set(command.data.name, command as SlashCommand);
@@ -809,17 +790,13 @@ export default class Remix extends Discord.Client<true> {
 
     await loadAssets("./commands", setCommand);
 
-    const setIntermediary = async (
-      path: string,
-      type: "module" | "interaction"
-    ) => {
+    const setIntermediary = async (path: string, type: "module" | "interaction") => {
       const intermediary = (await import(path)).default as Module | Interaction;
 
       if (intermediary?.constructor?.name !== "AsyncFunction") {
-        throw new TypeError(
-          "Intermediary does not default export an async function",
-          { cause: path }
-        );
+        throw new TypeError("Intermediary does not default export an async function", {
+          cause: path
+        });
       }
 
       const intermediaryName = nameFromPath(path);
