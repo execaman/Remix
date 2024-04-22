@@ -1,3 +1,5 @@
 app/
 node_modules/
+src/utility/myconfig.mts
+mycookie.json
 package-lock.json
