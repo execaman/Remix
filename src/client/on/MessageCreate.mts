@@ -1,4 +1,3 @@
-import Discord from "discord.js";
 import type Remix from "../../client.mjs";
 import type { Message } from "../../utility/types.mjs";
 
@@ -11,9 +10,7 @@ export default async (client: Remix, message: Message) => {
     await message.fetch();
   }
 
-  message.repliable = !!message.channel
-    .permissionsFor(client.user.id, false)
-    ?.has(Discord.PermissionFlagsBits.SendMessages);
+  message.repliable = client.canSendMessageIn(message.channel);
 
   await Promise.allSettled(client.modules.map((module) => module(client, message)));
 };
