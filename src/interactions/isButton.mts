@@ -36,6 +36,17 @@ export default async (client: Remix, interaction: Discord.ButtonInteraction<"cac
           `)
         ]
       });
+    } else if (customId === "playlist") {
+      await interaction.deferReply({ ephemeral: true });
+      const User = client.db.model<IUser>("user");
+      const data =
+        (await User.findOne({ id: interaction.user.id })) || new User({ id: interaction.user.id });
+      if (client.sessions.has(interaction.user.id)) {
+        await client.sessions.get(interaction.user.id)!.destroy();
+      }
+      const session = new client.util.musicRequest(interaction, data);
+      client.sessions.set(interaction.user.id, session);
+      await session.init();
     } else if (customId === "play") {
       if (!interaction.member.voice.channel) {
         await interaction.reply({

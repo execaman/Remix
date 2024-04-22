@@ -101,6 +101,11 @@ export default class Remix extends Discord.Client<true> {
         .setLabel("Help"),
 
       new Discord.ButtonBuilder()
+        .setCustomId("message_playlist")
+        .setStyle(Discord.ButtonStyle.Secondary)
+        .setLabel("Open Playlist"),
+
+      new Discord.ButtonBuilder()
         .setCustomId("message_play")
         .setStyle(Discord.ButtonStyle.Secondary)
         .setLabel("Search and start playing!")
