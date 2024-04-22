@@ -25,8 +25,7 @@ export async function execute(
     const User = client.db.model<IUser>("user");
 
     userData =
-      (await User.findOne({ id: interaction.user.id })) ||
-      new User({ id: interaction.user.id });
+      (await User.findOne({ id: interaction.user.id })) || new User({ id: interaction.user.id });
   }
 
   const newSession = new client.util.musicRequest(interaction, userData);

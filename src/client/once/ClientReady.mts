@@ -5,9 +5,7 @@ export default async (client: Remix) => {
     await client.application.fetch();
   }
 
-  await client.application.commands.set(
-    client.commands.slash.map((command) => command.data)
-  );
+  await client.application.commands.set(client.commands.slash.map((command) => command.data));
 
   if ("username" in client.application.owner!) {
     client.config.owners.add(client.application.owner.id);

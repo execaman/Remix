@@ -59,9 +59,7 @@ export async function execute(
     return;
   }
 
-  const queue = client.player.getQueue(interaction.guildId) as
-    | Queue
-    | undefined;
+  const queue = client.player.getQueue(interaction.guildId) as Queue | undefined;
 
   if (queue && queue.voice.channelId !== interaction.member.voice.channelId) {
     await interaction.editReply({
@@ -84,8 +82,7 @@ export async function execute(
   };
 
   if (!queue?.textChannel) {
-    playOptions.textChannel =
-      interaction.channel || interaction.member.voice.channel;
+    playOptions.textChannel = interaction.channel || interaction.member.voice.channel;
   }
 
   if (skip) {
@@ -102,11 +99,7 @@ export async function execute(
   }
 
   try {
-    await client.player.play(
-      interaction.member.voice.channel,
-      song,
-      playOptions
-    );
+    await client.player.play(interaction.member.voice.channel, song, playOptions);
     await interaction.deleteReply();
   } catch {
     await interaction.editReply({

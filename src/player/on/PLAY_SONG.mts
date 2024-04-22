@@ -25,10 +25,5 @@ export default async (client: Remix, queue: Queue, song: Song) => {
 
   queue.editCount = 0;
 
-  queue.editTimer = setTimeout(
-    client.handlePlayer,
-    10_000,
-    client,
-    queue.id
-  ).unref();
+  queue.editTimer = setTimeout(client.handlePlayer, 10_000, client, queue.id).unref();
 };

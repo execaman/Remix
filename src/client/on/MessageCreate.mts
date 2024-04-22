@@ -15,7 +15,5 @@ export default async (client: Remix, message: Message) => {
     .permissionsFor(client.user.id, false)
     ?.has(Discord.PermissionFlagsBits.SendMessages);
 
-  await Promise.allSettled(
-    client.modules.map((module) => module(client, message))
-  );
+  await Promise.allSettled(client.modules.map((module) => module(client, message)));
 };

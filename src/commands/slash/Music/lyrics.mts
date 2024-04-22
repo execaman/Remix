@@ -21,9 +21,7 @@ export async function execute(
   let lyricData: LyricResult;
 
   if (typeof song !== "string") {
-    const queue = client.player.getQueue(interaction.guildId) as
-      | Queue
-      | undefined;
+    const queue = client.player.getQueue(interaction.guildId) as Queue | undefined;
 
     if (!queue) {
       await interaction.editReply({

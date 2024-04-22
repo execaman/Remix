@@ -19,8 +19,7 @@ export default class LyricRequest {
   data: LyricResult = null!;
   menu: Menu<string> = null!;
 
-  collector: Discord.InteractionCollector<Discord.ButtonInteraction<"cached">> =
-    null!;
+  collector: Discord.InteractionCollector<Discord.ButtonInteraction<"cached">> = null!;
 
   constructor(interaction: Interaction, data: LyricResult) {
     this.interaction = interaction as LyricRequestInteraction;
@@ -72,11 +71,10 @@ export default class LyricRequest {
       components: this.lyricComponents()
     });
 
-    this.collector =
-      message.createMessageComponentCollector<Discord.ComponentType.Button>({
-        dispose: true,
-        idle: this.interaction.client.util.time.ms("03:00")
-      });
+    this.collector = message.createMessageComponentCollector<Discord.ComponentType.Button>({
+      dispose: true,
+      idle: this.interaction.client.util.time.ms("03:00")
+    });
 
     this.collector.once("end", async () => {
       await this.destroy(true);
@@ -90,9 +88,7 @@ export default class LyricRequest {
   async handleRequest(interaction: CollectorInteraction) {
     const action = interaction.customId.split("_").pop() as string;
 
-    if (
-      ["firstItem", "previousItem", "nextItem", "lastItem"].includes(action)
-    ) {
+    if (["firstItem", "previousItem", "nextItem", "lastItem"].includes(action)) {
       await interaction.update({
         embeds: [this.lyricEmbed((this.menu as any)[action] as string)],
         components: this.lyricComponents()
@@ -121,10 +117,7 @@ export default class LyricRequest {
         const code = modal.fields.getTextInputValue("code");
 
         try {
-          const { sentences } = await interaction.client.util.translate(
-            this.data.lyrics,
-            code
-          );
+          const { sentences } = await interaction.client.util.translate(this.data.lyrics, code);
 
           const pages = sentences.reduce<string[]>((total, current, index) => {
             if (current.orig && current.trans) {
@@ -133,9 +126,7 @@ export default class LyricRequest {
               if (index % 5 === 0) {
                 total.push(transcript);
               } else {
-                total[total.length - 1] = total
-                  .at(-1)!
-                  .concat(`\n\n${transcript}`);
+                total[total.length - 1] = total.at(-1)!.concat(`\n\n${transcript}`);
               }
             }
             return total;
@@ -324,9 +315,7 @@ export default class LyricRequest {
       new Discord.ButtonBuilder()
         .setStyle(Discord.ButtonStyle.Link)
         .setLabel("Language Codes")
-        .setURL(
-          `https://cloud.google.com/translate/docs/languages#try-it-for-yourself`
-        )
+        .setURL(`https://cloud.google.com/translate/docs/languages#try-it-for-yourself`)
     );
   }
 }

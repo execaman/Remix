@@ -7,10 +7,7 @@ export const data = new Discord.SlashCommandBuilder()
   .setName("eval")
   .setDescription("evaluate a script")
   .addStringOption((script) =>
-    script
-      .setName("script")
-      .setDescription("the script to evaluate")
-      .setRequired(true)
+    script.setName("script").setDescription("the script to evaluate").setRequired(true)
   );
 
 export async function execute(
@@ -62,11 +59,10 @@ export async function execute(
         embeds: [codeEmbed(menu.currentItem as string)],
         components: [codeNav()]
       });
-      const collector =
-        message.createMessageComponentCollector<Discord.ComponentType.Button>({
-          dispose: true,
-          idle: client.util.time.ms("03:00")
-        });
+      const collector = message.createMessageComponentCollector<Discord.ComponentType.Button>({
+        dispose: true,
+        idle: client.util.time.ms("03:00")
+      });
       collector.once("end", async () => {
         collector.removeAllListeners();
         menu.erase();

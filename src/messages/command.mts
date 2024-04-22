@@ -9,9 +9,7 @@ export default async (client: Remix, message: Message) => {
   let prefix = client.commands.prefix.get(message.guildId);
 
   if (typeof prefix !== "string") {
-    const guild = await client.db
-      .model<IGuild>("guild")
-      .findOne({ id: message.guildId });
+    const guild = await client.db.model<IGuild>("guild").findOne({ id: message.guildId });
 
     if (typeof guild?.prefix === "string") {
       client.commands.prefix.set(message.guildId, guild.prefix);
@@ -20,10 +18,7 @@ export default async (client: Remix, message: Message) => {
     prefix = guild?.prefix || client.config.prefix;
   }
 
-  if (
-    !message.content.startsWith(prefix) &&
-    !message.content.startsWith(mention)
-  ) {
+  if (!message.content.startsWith(prefix) && !message.content.startsWith(mention)) {
     return;
   }
 
@@ -43,10 +38,7 @@ export default async (client: Remix, message: Message) => {
     : command
   );
 
-  if (
-    !command ||
-    (command.data.owner && !client.config.owners.has(message.author.id))
-  ) {
+  if (!command || (command.data.owner && !client.config.owners.has(message.author.id))) {
     return;
   }
 
@@ -80,20 +72,14 @@ export default async (client: Remix, message: Message) => {
       if (perms.client) {
         const missing = permissions.client.missing(perms.client);
         if (missing.length !== 0) {
-          await noPerms(
-            "I don't have the following permissions:",
-            missing.join()
-          );
+          await noPerms("I don't have the following permissions:", missing.join());
           return false;
         }
       }
       if (perms.member) {
         const missing = permissions.member.missing(perms.member);
         if (missing.length !== 0) {
-          await noPerms(
-            "You don't have the following permissions:",
-            missing.join()
-          );
+          await noPerms("You don't have the following permissions:", missing.join());
           return false;
         }
       }
@@ -117,9 +103,7 @@ export default async (client: Remix, message: Message) => {
         }
 
         const arg = argList.shift() as string;
-        const subcommand = subcommands.find(
-          (i) => i.name === arg || i.aliases?.includes(arg)
-        );
+        const subcommand = subcommands.find((i) => i.name === arg || i.aliases?.includes(arg));
         if (!subcommand) {
           return;
         }

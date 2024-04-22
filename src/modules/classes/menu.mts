@@ -68,9 +68,7 @@ export default class Menu<Item = any> {
 
   get randomItem() {
     if (this.empty) return null;
-    return this.items[
-      (this.#index = Math.floor(Math.random() * this.items.length))
-    ];
+    return this.items[(this.#index = Math.floor(Math.random() * this.items.length))];
   }
 
   copy() {

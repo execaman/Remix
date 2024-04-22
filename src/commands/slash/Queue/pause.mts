@@ -12,9 +12,7 @@ export async function execute(
 ) {
   await interaction.deferReply({ ephemeral: true });
 
-  const queue = client.player.getQueue(interaction.guildId) as
-    | Queue
-    | undefined;
+  const queue = client.player.getQueue(interaction.guildId) as Queue | undefined;
 
   if (!queue || queue.paused) {
     await interaction.editReply({

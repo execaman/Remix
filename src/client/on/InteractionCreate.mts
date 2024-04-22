@@ -11,10 +11,7 @@ export default async (client: Remix, interaction: Discord.Interaction) => {
       try {
         await interact(client, interaction);
       } catch (err) {
-        if (
-          err instanceof Error &&
-          err.message.toLowerCase() !== "unknown interaction"
-        ) {
+        if (err instanceof Error && err.message.toLowerCase() !== "unknown interaction") {
           client.emit(Discord.Events.Error, err);
         }
       }

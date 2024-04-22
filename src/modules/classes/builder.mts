@@ -1,8 +1,4 @@
-import type {
-  Permission,
-  Permissions,
-  Subcommand
-} from "../../utility/types.mjs";
+import type { Permission, Permissions, Subcommand } from "../../utility/types.mjs";
 
 export default class TextCommandBuilder implements Subcommand {
   name: string = null!;
@@ -43,9 +39,7 @@ export default class TextCommandBuilder implements Subcommand {
     if (aliases.length === 0) {
       throw new Error("No alias provided");
     }
-    if (
-      aliases.some((alias) => typeof alias !== "string" || alias.length === 0)
-    ) {
+    if (aliases.some((alias) => typeof alias !== "string" || alias.length === 0)) {
       throw new TypeError("Expected a non-empty string");
     }
     this.aliases = aliases;
@@ -90,11 +84,7 @@ export default class TextCommandBuilder implements Subcommand {
     return this;
   }
 
-  addSubcommand(
-    input:
-      | TextCommandBuilder
-      | ((builder: TextCommandBuilder) => TextCommandBuilder)
-  ) {
+  addSubcommand(input: TextCommandBuilder | ((builder: TextCommandBuilder) => TextCommandBuilder)) {
     let subcommand: Subcommand;
 
     if (input instanceof TextCommandBuilder) {

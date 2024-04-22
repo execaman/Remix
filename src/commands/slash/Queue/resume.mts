@@ -12,17 +12,13 @@ export async function execute(
 ) {
   await interaction.deferReply({ ephemeral: true });
 
-  const queue = client.player.getQueue(interaction.guildId) as
-    | Queue
-    | undefined;
+  const queue = client.player.getQueue(interaction.guildId) as Queue | undefined;
 
   if (!queue || queue.playing) {
     await interaction.editReply({
       embeds: [
         client.errorEmbed(
-          !queue ?
-            "The player is inactive at the moment"
-          : "The player is not paused"
+          !queue ? "The player is inactive at the moment" : "The player is not paused"
         )
       ]
     });

@@ -6,11 +6,7 @@ export const data = new Discord.SlashCommandBuilder()
   .setName("prefix")
   .setDescription("change the prefix for your server")
   .addStringOption((value) =>
-    value
-      .setName("value")
-      .setDescription("new prefix")
-      .setMinLength(1)
-      .setMaxLength(5)
+    value.setName("value").setDescription("new prefix").setMinLength(1).setMaxLength(5)
   );
 
 export async function execute(
@@ -22,8 +18,7 @@ export async function execute(
   const Guild = client.db.model<IGuild>("guild");
 
   const guild =
-    (await Guild.findOne({ id: interaction.guildId })) ||
-    new Guild({ id: interaction.guildId });
+    (await Guild.findOne({ id: interaction.guildId })) || new Guild({ id: interaction.guildId });
 
   const value = interaction.options.getString("value");
 

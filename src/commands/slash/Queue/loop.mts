@@ -37,9 +37,7 @@ export async function execute(
 ) {
   await interaction.deferReply({ ephemeral: true });
 
-  const queue = client.player.getQueue(interaction.guildId) as
-    | Queue
-    | undefined;
+  const queue = client.player.getQueue(interaction.guildId) as Queue | undefined;
 
   if (!queue) {
     await interaction.editReply({
@@ -62,11 +60,7 @@ export async function execute(
     return;
   }
 
-  const mode = interaction.options.getString("mode") as
-    | "normal"
-    | "song"
-    | "queue"
-    | "auto";
+  const mode = interaction.options.getString("mode") as "normal" | "song" | "queue" | "auto";
 
   if (mode !== "auto" && queue.autoplay) {
     queue.toggleAutoplay();

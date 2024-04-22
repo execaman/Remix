@@ -6,16 +6,10 @@ export const data = new Discord.SlashCommandBuilder()
   .setName("help")
   .setDescription("commands help")
   .addStringOption((category) =>
-    category
-      .setName("category")
-      .setDescription("available categories")
-      .setAutocomplete(true)
+    category.setName("category").setDescription("available categories").setAutocomplete(true)
   )
   .addStringOption((command) =>
-    command
-      .setName("command")
-      .setDescription("available commands")
-      .setAutocomplete(true)
+    command.setName("command").setDescription("available commands").setAutocomplete(true)
   );
 
 export async function autocomplete(
@@ -30,10 +24,7 @@ export async function autocomplete(
     const query = option.value.toLowerCase();
 
     client.commands.slash.each((command) => {
-      if (
-        !record.has(command.category) &&
-        command.category.toLowerCase().includes(query)
-      ) {
+      if (!record.has(command.category) && command.category.toLowerCase().includes(query)) {
         record.add(command.category);
 
         options.push({
@@ -110,9 +101,7 @@ export async function execute(
               },
               {
                 name: "Description",
-                value: Discord.codeBlock(
-                  (command.data as any).description || "No description"
-                )
+                value: Discord.codeBlock((command.data as any).description || "No description")
               }
             )
         ]

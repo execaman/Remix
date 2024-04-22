@@ -23,9 +23,7 @@ export default async (client: Remix, queue: Queue, playlist: Playlist) => {
           iconURL: (requester || client.user).displayAvatarURL()
         })
         .setTitle(
-          playlist.name.length > 50 ?
-            playlist.name.slice(0, 50).trim().concat("..")
-          : playlist.name
+          playlist.name.length > 50 ? playlist.name.slice(0, 50).trim().concat("..") : playlist.name
         )
         .setURL(playlist.url || null)
     ]
