@@ -80,7 +80,7 @@ export async function execute(
     }
   } catch (err) {
     await interaction.editReply({
-      embeds: [client.errorEmbed()]
+      embeds: [client.errorEmbed(err.message || null)]
     });
   }
 }

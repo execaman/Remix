@@ -559,7 +559,7 @@ export default class Remix extends Discord.Client<true> {
         name: title,
         iconURL: icon
       })
-      .setDescription(description);
+      .setDescription(Discord.codeBlock(description));
   }
 
   async handlePlayer(client: Remix, queueId: string) {

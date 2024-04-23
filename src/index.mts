@@ -5,6 +5,7 @@ const remix = new Remix({
   intents: [
     Discord.GatewayIntentBits.Guilds,
     Discord.GatewayIntentBits.GuildMessages,
+    Discord.GatewayIntentBits.MessageContent,
     Discord.GatewayIntentBits.GuildVoiceStates
   ],
   partials: [

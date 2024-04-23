@@ -171,7 +171,7 @@ export default async (client: Remix, interaction: Discord.ModalSubmitInteraction
             client.playerAlertEmbed({
               icon: queue.lastAction.icon,
               title: queue.lastAction.text,
-              description: Discord.codeBlock(`Skipping ${position} track${position > 1 ? "s" : ""}`)
+              description: `Skipping ${position} track${position > 1 ? "s" : ""}`
             })
           ]
         });

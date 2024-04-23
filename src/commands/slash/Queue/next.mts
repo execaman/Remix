@@ -51,9 +51,7 @@ export async function execute(
         client.playerAlertEmbed({
           icon: queue.lastAction.icon,
           title: queue.lastAction.text,
-          description: Discord.codeBlock(
-            `Stopping '${queue.songs[0].name?.slice(0, 40) || "Untitled Track"}'`
-          )
+          description: `Stopping '${queue.songs[0].name?.slice(0, 40) || "Untitled Track"}'`
         })
       ]
     });

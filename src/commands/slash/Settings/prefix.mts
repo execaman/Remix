@@ -1,6 +1,6 @@
 import Discord from "discord.js";
 import type Remix from "../../../client.mjs";
-import { IGuild } from "../../../models/guild.mjs";
+import type { IGuild } from "../../../models/guild.mjs";
 
 export const data = new Discord.SlashCommandBuilder()
   .setName("prefix")
@@ -20,32 +20,20 @@ export async function execute(
   const guild =
     (await Guild.findOne({ id: interaction.guildId })) || new Guild({ id: interaction.guildId });
 
-  const value = interaction.options.getString("value");
+  const prefix = interaction.options.getString("value");
 
-  let prefix = client.config.prefix;
-
-  if (typeof value !== "string") {
-    if (!guild.isNew) {
-      prefix = client.config.prefix;
-    }
-  } else {
-    guild.prefix = value;
-    try {
-      await guild.save();
-    } catch {
-      await interaction.editReply({
-        embeds: [client.errorEmbed()]
-      });
-      return;
-    }
+  if (typeof prefix === "string" && prefix !== guild.prefix) {
+    guild.prefix = prefix;
   }
+
+  if (guild.isModified()) await guild.save();
 
   await interaction.editReply({
     embeds: [
       new Discord.EmbedBuilder()
         .setColor(Discord.Colors.Yellow)
         .setTitle("Current Prefix")
-        .setDescription(Discord.codeBlock(prefix))
+        .setDescription(Discord.codeBlock(guild.prefix))
     ]
   });
 }
