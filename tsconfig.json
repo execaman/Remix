@@ -32,5 +32,6 @@
     "target": "ESNext",
     "useDefineForClassFields": false,
     "useUnknownInCatchVariables": false
-  }
+  },
+  "include": ["src"]
 }
