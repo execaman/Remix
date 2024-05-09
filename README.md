@@ -13,10 +13,6 @@ Most of them usually use [lavalink](https://github.com/lavalink-devs/Lavalink) b
 
 With [DisTube](https://github.com/skick1234/DisTube), you can play from a plenty of sites ([almost 1k!](https://github.com/yt-dlp/yt-dlp/blob/master/supportedsites.md)) with custom [ffmpeg audio filters](https://ffmpeg.org/ffmpeg-filters.html#Audio-Filters) (upto 100) of your own!
 
-### Development Status
-
-Pretty much everything (basic) has been settled for now. I can't work on this project for a while for some reason. Until then, feel free to report bugs or request features.
-
 ### Minimum Requirements
 
 - [Node](https://nodejs.org/en/download) v18 or higher
