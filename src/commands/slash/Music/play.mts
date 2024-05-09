@@ -1,11 +1,10 @@
 import Discord from "discord.js";
 import type Remix from "../../../client.mjs";
-import type { PlayOptions } from "distube";
 import type { Queue } from "../../../utility/types.mjs";
 
 export const data = new Discord.SlashCommandBuilder()
   .setName("play")
-  .setDescription("play music by name or url")
+  .setDescription("play a song by name or url")
   .addStringOption((song) =>
     song
       .setName("song")
@@ -14,36 +13,32 @@ export const data = new Discord.SlashCommandBuilder()
       .setRequired(true)
   )
   .addBooleanOption((skip) =>
-    skip.setName("skip").setDescription("whether to skip the current song")
+    skip.setName("skip").setDescription("skip the current song and play immediately")
   )
   .addIntegerOption((position) =>
-    position
-      .setName("position")
-      .setDescription("sets the position of this song in queue")
-      .setMinValue(1)
+    position.setName("position").setDescription("set position of this song in queue").setMinValue(1)
   );
 
 export async function autocomplete(
   client: Remix,
   interaction: Discord.AutocompleteInteraction<"cached">
 ) {
-  const query = interaction.options.getFocused();
-  let options: Discord.ApplicationCommandOptionChoiceData[] = [];
-  if (query.length !== 0) {
+  const option = interaction.options.getFocused(true);
+  const options: Discord.ApplicationCommandOptionChoiceData[] = [];
+
+  if (option.value.length !== 0) {
     try {
-      const results = await client.player.search(query, { limit: 5 });
-      options = results.reduce<typeof options>((total, current) => {
-        if (current.name && current.url) {
-          total.push({
-            name: current.name,
-            value: current.url
-          });
-        }
-        return total;
-      }, []);
+      for (const result of await client.player.search(option.value, {
+        limit: 5
+      })) {
+        options.push({
+          name: result.name.slice(0, 99),
+          value: result.url
+        });
+      }
     } catch {}
   }
-  await interaction.respond(options.slice(0, 25));
+  await interaction.respond(options);
 }
 
 export async function execute(
@@ -52,54 +47,62 @@ export async function execute(
 ) {
   await interaction.deferReply({ ephemeral: true });
 
-  if (!interaction.member.voice.channel) {
-    await interaction.editReply({
-      embeds: [client.errorEmbed("You must be in a voice channel")]
-    });
-    return;
-  }
-
   const queue = client.player.getQueue(interaction.guildId) as Queue | undefined;
 
-  if (queue && queue.voice.channelId !== interaction.member.voice.channelId) {
-    await interaction.editReply({
+  if (
+    !interaction.member.voice.channel ||
+    (queue && queue.voice.channelId !== interaction.member.voice.channelId)
+  ) {
+    await interaction.reply({
+      ephemeral: true,
       embeds: [
-        client.errorEmbed("You must join my voice channel").setFooter({
-          text: "The player is active in a different voice channel",
-          iconURL: client.user.displayAvatarURL()
-        })
+        client.errorEmbed(
+          `You must be in ${!interaction.member.voice.channel ? "a" : "my"} voice channel`
+        )
       ]
     });
     return;
   }
 
-  const song = interaction.options.getString("song")!;
-  const skip = interaction.options.getBoolean("skip");
-  const position = interaction.options.getInteger("position");
+  try {
+    const options = {
+      song: interaction.options.getString("song", true),
+      skip: interaction.options.getBoolean("skip") || false,
+      position: interaction.options.getInteger("position") || 0
+    };
 
-  const playOptions: PlayOptions = {
-    member: interaction.member
-  };
+    if (queue && options.position >= queue.songs.length) {
+      options.position = 0;
+    }
 
-  if (!queue?.textChannel) {
-    playOptions.textChannel = interaction.channel || interaction.member.voice.channel;
-  }
+    const currentSongName = queue?.songs[0].name?.slice(0, 45).trim() || "Untitled Track";
 
-  if (skip) {
-    playOptions.skip = true;
-    if (queue) {
+    await client.player.play(interaction.member.voice.channel, options.song, {
+      position: options.position,
+      skip: options.skip,
+      textChannel: queue?.textChannel || interaction.channel || interaction.member.voice.channel
+    });
+
+    if (options.skip && queue && queue.songs.length > 1) {
       queue.lastAction = {
         icon: interaction.member.displayAvatarURL(),
         text: `${interaction.member.displayName}: Skip & Play`,
         time: interaction.createdTimestamp
       };
-    }
-  } else if (queue && position && position < queue.songs.length) {
-    playOptions.position = position;
-  }
 
-  try {
-    await client.player.play(interaction.member.voice.channel, song, playOptions);
+      if (client.canSendMessageIn(queue.textChannel)) {
+        await queue.textChannel.send({
+          embeds: [
+            client.playerAlertEmbed({
+              icon: queue.lastAction.icon,
+              title: queue.lastAction.text,
+              description: `Stopping '${currentSongName}'`
+            })
+          ]
+        });
+      }
+    }
+
     await interaction.deleteReply();
   } catch {
     await interaction.editReply({

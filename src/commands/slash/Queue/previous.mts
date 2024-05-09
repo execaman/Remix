@@ -4,7 +4,7 @@ import type { Queue } from "../../../utility/types.mjs";
 
 export const data = new Discord.SlashCommandBuilder()
   .setName("previous")
-  .setDescription("play the previous song");
+  .setDescription("play the previous song in queue");
 
 export async function execute(
   client: Remix,
@@ -18,7 +18,7 @@ export async function execute(
     await interaction.editReply({
       embeds: [
         client.errorEmbed(
-          !queue ? "The player is inactive at the moment" : "There are no previous songs in Queue"
+          !queue ? "The player is inactive at the moment" : "There are no previous songs in queue"
         )
       ]
     });
@@ -46,17 +46,25 @@ export async function execute(
   };
 
   if (client.canSendMessageIn(queue.textChannel)) {
-    await queue.textChannel.send({
+    queue.textChannel.send({
       embeds: [
         client.playerAlertEmbed({
           icon: queue.lastAction.icon,
           title: queue.lastAction.text,
-          description: `Stopping '${queue.songs[0].name?.slice(0, 40) || "Untitled Track"}'`
+          description: `Stopping '${queue.songs[0].name?.slice(0, 45).trim() || "Untitled Track"}'`
         })
       ]
     });
   }
 
-  await queue.previous();
+  try {
+    await queue.previous();
+  } catch {
+    await interaction.editReply({
+      embeds: [client.errorEmbed()]
+    });
+    return;
+  }
+
   await interaction.deleteReply();
 }

@@ -10,7 +10,6 @@ export async function execute(
   interaction: Discord.ChatInputCommandInteraction<"cached">
 ) {
   await interaction.reply({
-    ephemeral: true,
     content: client.ws.ping.toString().concat("ms")
   });
 }

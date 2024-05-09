@@ -1,10 +1,11 @@
 import Discord from "discord.js";
+import { Events } from "distube";
 import type Remix from "../../../client.mjs";
 import type { Queue } from "../../../utility/types.mjs";
 
 export const data = new Discord.SlashCommandBuilder()
-  .setName("resume")
-  .setDescription("resume the player");
+  .setName("related")
+  .setDescription("adds a song related to the current one");
 
 export async function execute(
   client: Remix,
@@ -14,11 +15,9 @@ export async function execute(
 
   const queue = client.player.getQueue(interaction.guildId) as Queue | undefined;
 
-  if (!queue || !queue.paused) {
+  if (!queue) {
     await interaction.editReply({
-      embeds: [
-        client.errorEmbed(`The player is ${!queue ? "inactive" : "not paused"} at the moment`)
-      ]
+      embeds: [client.errorEmbed("The player is inactive at the moment")]
     });
     return;
   }
@@ -37,26 +36,9 @@ export async function execute(
     return;
   }
 
-  queue.lastAction = {
-    icon: interaction.member.displayAvatarURL(),
-    text: `${interaction.member.displayName}: Resume Player`,
-    time: interaction.createdTimestamp
-  };
-
-  if (client.canSendMessageIn(queue.textChannel)) {
-    await queue.textChannel.send({
-      embeds: [
-        client.playerAlertEmbed({
-          icon: queue.lastAction.icon,
-          title: queue.lastAction.text,
-          description: `Resuming '${queue.songs[0].name?.slice(0, 45).trim() || "Untitled Track"}'`
-        })
-      ]
-    });
-  }
-
   try {
-    queue.resume();
+    const song = await queue.addRelatedSong();
+    client.player.emit(Events.ADD_SONG, queue, song);
   } catch {
     await interaction.editReply({
       embeds: [client.errorEmbed()]

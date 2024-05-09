@@ -21,7 +21,7 @@ const remix = new Remix({
     GuildForumThreadManager: 0,
     GuildInviteManager: 0,
     GuildMemberManager: {
-      maxSize: 1,
+      maxSize: 50,
       keepOverLimit: (member) => member.id === member.client.user.id
     },
     GuildMessageManager: 50,

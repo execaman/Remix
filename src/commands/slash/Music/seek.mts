@@ -4,9 +4,12 @@ import type { Queue } from "../../../utility/types.mjs";
 
 export const data = new Discord.SlashCommandBuilder()
   .setName("seek")
-  .setDescription("play from a time in audio playback")
-  .addStringOption((duration) =>
-    duration.setName("duration").setDescription("like -30, 03:45, +30").setRequired(true)
+  .setDescription("jump to a specific time in song")
+  .addStringOption((time) =>
+    time
+      .setName("time")
+      .setDescription("values like -30, +30, 02:30 are supported")
+      .setRequired(true)
   );
 
 export async function execute(
@@ -38,49 +41,48 @@ export async function execute(
     return;
   }
 
-  const currentTime = queue.currentTime;
-  const maxDuration = queue.songs[0].duration;
-
-  const time = interaction.options.getString("duration") as string;
-
-  const type =
-    time.startsWith("-") ? "rewind"
-    : time.startsWith("+") ? "forward"
-    : "seek";
-
-  const lastAction = (text: string) => ({
-    icon: interaction.member.displayAvatarURL(),
-    text: `${interaction.member.displayName}: ${text}`,
-    time: interaction.createdTimestamp
-  });
-
   try {
-    const duration = client.util.time.seconds(time);
-    if (isNaN(duration)) {
-      throw null;
-    }
+    const currentTime = queue.currentTime;
+    const seekTime = interaction.options.getString("time", true);
 
-    if (type === "forward" && currentTime + duration < maxDuration) {
-      queue.seek(currentTime + duration);
+    const seekType =
+      seekTime.startsWith("-") ? "rewind"
+      : seekTime.startsWith("+") ? "forward"
+      : "absolute";
 
-      queue.lastAction = lastAction(`Duration: Forward ${duration}s`);
-    } else if (type === "rewind" && currentTime - duration > 0) {
-      queue.seek(currentTime - duration);
+    const seekDuration = client.util.time.seconds(seekTime);
 
-      queue.lastAction = lastAction(`Duration: Rewind ${Math.abs(duration)}s`);
-    } else if (type === "seek" && duration >= 0 && duration < maxDuration) {
-      queue.seek(duration);
+    if (isNaN(seekDuration)) throw "Invalid time/duration";
 
-      queue.lastAction = lastAction(`Duration: ${client.util.time.formatDuration(duration)}`);
-    } else {
-      throw null;
-    }
-  } catch {
-    await interaction.editReply({
-      embeds: [client.errorEmbed("Invalid time entered")]
+    const lastAction = (text: string) => ({
+      icon: interaction.member.displayAvatarURL(),
+      text: `${interaction.member.displayName}: ${text}`,
+      time: interaction.createdTimestamp
     });
-    return;
-  }
 
-  await interaction.deleteReply();
+    if (seekType === "rewind") {
+      if (currentTime - seekDuration < 0) throw "Duration rewinds current time below 0";
+      queue.seek(currentTime - seekDuration);
+
+      queue.lastAction = lastAction(`Duration: Rewind ${seekDuration}s`);
+    } else if (seekType === "forward") {
+      if (currentTime + seekDuration >= queue.songs[0].duration)
+        throw "Duration forwards current time beyond track length";
+
+      queue.seek(currentTime + seekDuration);
+      queue.lastAction = lastAction(`Duration: Forward ${seekDuration}s`);
+    } else {
+      if (seekDuration < 0 || seekDuration >= queue.songs[0].duration)
+        throw "Timestamp is not within track length";
+
+      queue.seek(seekDuration);
+      queue.lastAction = lastAction(`Duration: ${client.util.time.formatDuration(seekDuration)}`);
+    }
+
+    await interaction.deleteReply();
+  } catch (err) {
+    await interaction.editReply({
+      embeds: [client.errorEmbed(typeof err === "string" ? err : null)]
+    });
+  }
 }

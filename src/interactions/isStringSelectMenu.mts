@@ -51,8 +51,7 @@ export default async (
             });
         await client.player.play(interaction.member.voice.channel, source, {
           member: interaction.member,
-          textChannel:
-            queue ? queue.textChannel! : interaction.channel || interaction.member.voice.channel
+          textChannel: queue?.textChannel || interaction.channel || interaction.member.voice.channel
         });
         await interaction.deleteReply();
       } catch {

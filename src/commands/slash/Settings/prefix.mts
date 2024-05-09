@@ -4,9 +4,15 @@ import type { IGuild } from "../../../models/guild.mjs";
 
 export const data = new Discord.SlashCommandBuilder()
   .setName("prefix")
-  .setDescription("change the prefix for your server")
-  .addStringOption((value) =>
-    value.setName("value").setDescription("new prefix").setMinLength(1).setMaxLength(5)
+  .setDescription("change the prefix for text commands on this server")
+  .setDefaultMemberPermissions(Discord.PermissionFlagsBits.ManageGuild)
+  .addStringOption((label) =>
+    label
+      .setName("label")
+      .setDescription("prefix should not be longer than 5 characters")
+      .setMinLength(1)
+      .setMaxLength(5)
+      .setRequired(true)
   );
 
 export async function execute(
@@ -17,23 +23,32 @@ export async function execute(
 
   const Guild = client.db.model<IGuild>("guild");
 
-  const guild =
+  const data =
     (await Guild.findOne({ id: interaction.guildId })) || new Guild({ id: interaction.guildId });
 
-  const prefix = interaction.options.getString("value");
+  const prefix = interaction.options.getString("label", true);
 
-  if (typeof prefix === "string" && prefix !== guild.prefix) {
-    guild.prefix = prefix;
+  if (data.prefix !== prefix) {
+    data.prefix = prefix;
+    try {
+      await data.save();
+    } catch {
+      await interaction.editReply({
+        embeds: [client.errorEmbed()]
+      });
+      return;
+    }
   }
-
-  if (guild.isModified()) await guild.save();
 
   await interaction.editReply({
     embeds: [
       new Discord.EmbedBuilder()
         .setColor(Discord.Colors.Yellow)
-        .setTitle("Current Prefix")
-        .setDescription(Discord.codeBlock(guild.prefix))
+        .setAuthor({
+          name: "Current Prefix",
+          iconURL: client.user.displayAvatarURL()
+        })
+        .setDescription(Discord.codeBlock(data.prefix))
     ]
   });
 }

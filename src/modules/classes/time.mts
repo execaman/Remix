@@ -10,7 +10,7 @@ export default class Time {
   static eval(input: string, ms = false) {
     const digits = input.match(/\d+/g)?.reverse();
     if (!digits || digits.length > 7) {
-      throw new Error("Expected integers in string, no more than 7 in length");
+      throw new Error(`Expected 'YY:MM:DD:hh:mm:ss:ms' got '${digits?.join(":")}'`);
     }
     const map = [1e3, 6e4, 36e5, 864e5, 2592e6, 31104e6];
     const result = digits.reduce(

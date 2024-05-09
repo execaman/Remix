@@ -18,7 +18,7 @@ import type { Cookie } from "@distube/ytdl-core";
 type Interaction = (client: Remix, interaction: Discord.Interaction<"cached">) => Promise<void>;
 
 export interface SlashCommand {
-  data: Discord.RESTPostAPIApplicationCommandsJSONBody;
+  data: Discord.RESTPostAPIChatInputApplicationCommandsJSONBody;
   owner?: boolean;
   category: string;
   execute: Interaction;
@@ -60,21 +60,21 @@ export default class Remix extends Discord.Client<true> {
   }
 
   canSendMessageIn(
-    channel?: Discord.GuildTextBasedChannel
+    channel?: Discord.GuildTextBasedChannel | null
   ): channel is Discord.GuildTextBasedChannel {
     return !!channel
       ?.permissionsFor(this.user.id, false)
       ?.has(Discord.PermissionFlagsBits.SendMessages);
   }
 
-  errorEmbed(description?: string) {
+  errorEmbed(description?: string | null) {
     return new Discord.EmbedBuilder()
       .setColor(Discord.Colors.Red)
       .setTitle(`${this.config.emoji.warn} Something went wrong`)
       .setDescription(Discord.codeBlock(description || "An unexpected error occurred"));
   }
 
-  introEmbed(message: Discord.Message<true>) {
+  introEmbed(intermediary: Discord.Message<true> | Discord.ChatInputCommandInteraction<"cached">) {
     return new Discord.EmbedBuilder()
       .setColor(Discord.Colors.Yellow)
       .setAuthor({
@@ -82,9 +82,9 @@ export default class Remix extends Discord.Client<true> {
         iconURL: this.user.displayAvatarURL()
       })
       .setThumbnail(
-        message.member?.displayAvatarURL() ||
-          message.author.displayAvatarURL() ||
-          message.guild.iconURL()
+        intermediary.member?.displayAvatarURL() ||
+          ("author" in intermediary ? intermediary.author : intermediary.user).displayAvatarURL() ||
+          intermediary.guild.iconURL()
       )
       .setDescription(
         Discord.codeBlock(
@@ -543,23 +543,24 @@ export default class Remix extends Discord.Client<true> {
   }
 
   playerAlertEmbed({
-    icon,
     title,
     description,
-    color = Discord.Colors.Yellow
+    color = Discord.Colors.Yellow,
+    icon = this.user.displayAvatarURL()
   }: {
-    icon: string;
     title: string;
-    description: string;
-    color?: Discord.ColorResolvable;
+    description?: string | null;
+    color?: Discord.ColorResolvable | null;
+    icon?: string | null;
   }) {
-    return new Discord.EmbedBuilder()
-      .setColor(color)
-      .setAuthor({
-        name: title,
-        iconURL: icon
-      })
-      .setDescription(Discord.codeBlock(description));
+    const alertEmbed = new Discord.EmbedBuilder().setColor(color).setAuthor({
+      name: title,
+      iconURL: icon || this.user.displayAvatarURL()
+    });
+    if (typeof description === "string") {
+      alertEmbed.setDescription(Discord.codeBlock(description));
+    }
+    return alertEmbed;
   }
 
   async handlePlayer(client: Remix, queueId: string) {

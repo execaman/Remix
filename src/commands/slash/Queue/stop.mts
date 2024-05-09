@@ -4,7 +4,7 @@ import type { Queue } from "../../../utility/types.mjs";
 
 export const data = new Discord.SlashCommandBuilder()
   .setName("stop")
-  .setDescription("stops the player");
+  .setDescription("stop the player");
 
 export async function execute(
   client: Remix,
@@ -35,9 +35,6 @@ export async function execute(
     return;
   }
 
-  await queue.stop();
-  await interaction.deleteReply();
-
   if (client.canSendMessageIn(queue.textChannel)) {
     await queue.textChannel.send({
       embeds: [
@@ -49,4 +46,15 @@ export async function execute(
       ]
     });
   }
+
+  try {
+    await queue.stop();
+  } catch {
+    await interaction.editReply({
+      embeds: [client.errorEmbed()]
+    });
+    return;
+  }
+
+  await interaction.deleteReply();
 }

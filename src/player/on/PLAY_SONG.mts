@@ -1,17 +1,10 @@
-import Discord from "discord.js";
 import { setTimeout } from "node:timers";
 import type Remix from "../../client.mjs";
 import type { Queue } from "../../utility/types.mjs";
 import type { Song } from "distube";
 
 export default async (client: Remix, queue: Queue, song: Song) => {
-  if (
-    !queue.textChannel
-      ?.permissionsFor(client.user.id, false)
-      ?.has(Discord.PermissionFlagsBits.SendMessages)
-  ) {
-    return;
-  }
+  if (!client.canSendMessageIn(queue.textChannel)) return;
 
   if (queue.lyricId && queue.lyricId !== song.id) {
     delete queue.lyricId;

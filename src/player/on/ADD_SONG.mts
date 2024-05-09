@@ -4,13 +4,7 @@ import type { Queue } from "../../utility/types.mjs";
 import type { Song } from "distube";
 
 export default async (client: Remix, queue: Queue, song: Song) => {
-  if (
-    !queue.textChannel
-      ?.permissionsFor(client.user.id, false)
-      ?.has(Discord.PermissionFlagsBits.SendMessages)
-  ) {
-    return;
-  }
+  if (!client.canSendMessageIn(queue.textChannel)) return;
 
   const requester = song.member || song.user;
 

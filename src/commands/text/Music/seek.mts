@@ -4,80 +4,79 @@ import type { Message, Queue } from "../../../utility/types.mjs";
 
 export const data = new TextCommandBuilder()
   .setName("seek")
-  .setDescription("play from a time in audio playback");
+  .setDescription("jump to a specific time in song");
 
 export async function execute(client: Remix, message: Message, args: string[]) {
+  if (!message.repliable) return;
+
   const queue = client.player.getQueue(message.guildId) as Queue | undefined;
 
   if (!queue) {
-    if (!message.repliable) return;
     await message.reply({
       embeds: [client.errorEmbed("The player is inactive at the moment")]
     });
     return;
   }
 
-  if (!message.member?.voice.channel || queue.voice.channelId !== message.member.voice.channelId) {
-    if (!message.repliable) return;
+  if (args.length === 0) {
     await message.reply({
-      embeds: [
-        client.errorEmbed(
-          `You must be in ${!message.member?.voice.channel ? "a" : "my"} voice channel`
-        )
-      ]
+      embeds: [client.errorEmbed("No time/duration specified")]
     });
     return;
   }
-
-  const currentTime = queue.currentTime;
-  const maxDuration = queue.songs[0].duration;
-
-  const time = args.join(" ");
-
-  if (time.length === 0) {
-    if (!message.repliable) return;
-    await message.reply({
-      embeds: [client.errorEmbed("No timestamp provided")]
-    });
-    return;
-  }
-
-  const type =
-    time.startsWith("-") ? "rewind"
-    : time.startsWith("+") ? "forward"
-    : "seek";
-
-  const lastAction = (text: string) => ({
-    icon: (message.member || message.author).displayAvatarURL(),
-    text: `${(message.member || message.author).displayName}: ${text}`,
-    time: message.createdTimestamp
-  });
 
   try {
-    const duration = client.util.time.seconds(time);
-    if (isNaN(duration)) {
-      throw null;
-    }
+    const currentTime = queue.currentTime;
+    const seekTime = args[0];
 
-    if (type === "forward" && currentTime + duration < maxDuration) {
-      queue.seek(currentTime + duration);
+    const seekType =
+      seekTime.startsWith("-") ? "rewind"
+      : seekTime.startsWith("+") ? "forward"
+      : "absolute";
 
-      queue.lastAction = lastAction(`Duration: Forward ${duration}s`);
-    } else if (type === "rewind" && currentTime - duration > 0) {
-      queue.seek(currentTime - duration);
+    const seekDuration = client.util.time.seconds(seekTime);
 
-      queue.lastAction = lastAction(`Duration: Rewind ${Math.abs(duration)}s`);
-    } else if (type === "seek" && duration >= 0 && duration < maxDuration) {
-      queue.seek(duration);
+    if (isNaN(seekDuration)) throw "Invalid time/duration";
 
-      queue.lastAction = lastAction(`Duration: ${client.util.time.formatDuration(duration)}`);
-    } else {
-      throw null;
-    }
-  } catch {
-    await message.reply({
-      embeds: [client.errorEmbed("Invalid time entered")]
+    const member = await message.guild.members.fetch(message.author.id);
+
+    const lastAction = (text: string) => ({
+      icon: member.displayAvatarURL(),
+      text: `${member.displayName}: ${text}`,
+      time: message.createdTimestamp
     });
-    return;
+
+    if (seekType === "rewind") {
+      if (currentTime - seekDuration < 0) throw "Duration rewinds current time below 0";
+      queue.seek(currentTime - seekDuration);
+
+      queue.lastAction = lastAction(`Duration: Rewind ${seekDuration}s`);
+    } else if (seekType === "forward") {
+      if (currentTime + seekDuration >= queue.songs[0].duration)
+        throw "Duration forwards current time beyond track length";
+
+      queue.seek(currentTime + seekDuration);
+      queue.lastAction = lastAction(`Duration: Forward ${seekDuration}s`);
+    } else {
+      if (seekDuration < 0 || seekDuration >= queue.songs[0].duration)
+        throw "Timestamp is not within track length";
+
+      queue.seek(seekDuration);
+      queue.lastAction = lastAction(`Duration: ${client.util.time.formatDuration(seekDuration)}`);
+    }
+
+    if (message.channelId !== queue.textChannel?.id) {
+      await message.reply({
+        embeds: [
+          client.playerAlertEmbed({
+            title: `Current time set to ${client.util.time.formatDuration(queue.currentTime)}`
+          })
+        ]
+      });
+    }
+  } catch (err) {
+    await message.reply({
+      embeds: [client.errorEmbed(typeof err === "string" ? err : null)]
+    });
   }
 }

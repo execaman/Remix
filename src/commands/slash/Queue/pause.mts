@@ -16,7 +16,9 @@ export async function execute(
 
   if (!queue || queue.paused) {
     await interaction.editReply({
-      embeds: [client.errorEmbed("The player is inactive at the moment")]
+      embeds: [
+        client.errorEmbed(`The player is ${!queue ? "inactive" : "already paused"} at the moment`)
+      ]
     });
     return;
   }
@@ -35,21 +37,31 @@ export async function execute(
     return;
   }
 
-  queue.pause();
-
   queue.lastAction = {
     icon: interaction.member.displayAvatarURL(),
     text: `${interaction.member.displayName}: Pause Player`,
     time: interaction.createdTimestamp
   };
 
-  if (queue.playerMessage) {
-    try {
-      await queue.playerMessage.edit({
-        embeds: [client.playerEmbed(queue)],
-        components: client.playerComponents(queue)
-      });
-    } catch {}
+  if (client.canSendMessageIn(queue.textChannel)) {
+    await queue.textChannel.send({
+      embeds: [
+        client.playerAlertEmbed({
+          icon: queue.lastAction.icon,
+          title: queue.lastAction.text,
+          description: `Paused '${queue.songs[0].name?.slice(0, 45).trim() || "Untitled Track"}'`
+        })
+      ]
+    });
+  }
+
+  try {
+    queue.pause();
+  } catch {
+    await interaction.editReply({
+      embeds: [client.errorEmbed()]
+    });
+    return;
   }
 
   await interaction.deleteReply();

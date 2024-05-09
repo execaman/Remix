@@ -4,15 +4,9 @@ import type { Queue } from "../../utility/types.mjs";
 import type { Playlist } from "distube";
 
 export default async (client: Remix, queue: Queue, playlist: Playlist) => {
-  if (
-    !queue.textChannel
-      ?.permissionsFor(client.user.id, false)
-      ?.has(Discord.PermissionFlagsBits.SendMessages)
-  ) {
-    return;
-  }
+  if (!client.canSendMessageIn(queue.textChannel)) return;
 
-  const requester = playlist.member || playlist.user;
+  const requester = playlist.member || playlist.user || client.user;
 
   await queue.textChannel.send({
     embeds: [

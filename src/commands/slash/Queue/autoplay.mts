@@ -3,8 +3,8 @@ import type Remix from "../../../client.mjs";
 import type { Queue } from "../../../utility/types.mjs";
 
 export const data = new Discord.SlashCommandBuilder()
-  .setName("filters")
-  .setDescription("player filter manager");
+  .setName("autoplay")
+  .setDescription("enable player autoplay mode");
 
 export async function execute(
   client: Remix,
@@ -35,7 +35,14 @@ export async function execute(
     return;
   }
 
-  await interaction.editReply({
-    components: client.playerQueueFilters(queue)
-  });
+  if (!queue.autoplay) {
+    queue.toggleAutoplay();
+    queue.lastAction = {
+      icon: interaction.member.displayAvatarURL(),
+      text: `${interaction.member.displayName}: Queue Mode: Auto`,
+      time: interaction.createdTimestamp
+    };
+  }
+
+  await interaction.deleteReply();
 }

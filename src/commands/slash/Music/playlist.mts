@@ -1,6 +1,5 @@
 import Discord from "discord.js";
 import type Remix from "../../../client.mjs";
-import type MusicRequest from "../../../modules/classes/music.mjs";
 import type { IUser } from "../../../models/user.mjs";
 
 export const data = new Discord.SlashCommandBuilder()
@@ -13,24 +12,23 @@ export async function execute(
 ) {
   await interaction.deferReply({ ephemeral: true });
 
-  let userData: IUser = null!;
+  const User = client.db.model<IUser>("user");
 
-  if (client.sessions.has(interaction.user.id)) {
-    const session = client.sessions.get(interaction.user.id) as MusicRequest;
+  const data =
+    (await User.findOne({ id: interaction.user.id })) || new User({ id: interaction.user.id });
 
-    userData = session.data;
+  try {
+    if (client.sessions.has(interaction.user.id)) {
+      await client.sessions.get(interaction.user.id)!.destroy();
+    }
 
-    await session.destroy();
-  } else {
-    const User = client.db.model<IUser>("user");
+    const session = new client.util.musicRequest(interaction, data);
+    client.sessions.set(interaction.user.id, session);
 
-    userData =
-      (await User.findOne({ id: interaction.user.id })) || new User({ id: interaction.user.id });
+    await session.init();
+  } catch {
+    await interaction.editReply({
+      embeds: [client.errorEmbed()]
+    });
   }
-
-  const newSession = new client.util.musicRequest(interaction, userData);
-
-  client.sessions.set(interaction.user.id, newSession);
-
-  await newSession.init();
 }

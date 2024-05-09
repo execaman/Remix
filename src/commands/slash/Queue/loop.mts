@@ -1,31 +1,31 @@
 import Discord from "discord.js";
+import { RepeatMode } from "distube";
 import type Remix from "../../../client.mjs";
 import type { Queue } from "../../../utility/types.mjs";
-import { RepeatMode } from "distube";
 
 export const data = new Discord.SlashCommandBuilder()
   .setName("loop")
-  .setDescription("player queue loop mode")
+  .setDescription("change the way queue loads music")
   .addStringOption((mode) =>
     mode
       .setName("mode")
-      .setDescription("loop mode")
+      .setDescription("select a queue mode")
       .setChoices(
         {
-          name: "normal",
-          value: "normal"
+          name: "Auto",
+          value: "3"
         },
         {
-          name: "song",
-          value: "song"
+          name: "Normal",
+          value: `${RepeatMode.DISABLED}`
         },
         {
-          name: "queue",
-          value: "queue"
+          name: "Song",
+          value: `${RepeatMode.SONG}`
         },
         {
-          name: "auto",
-          value: "auto"
+          name: "Queue",
+          value: `${RepeatMode.QUEUE}`
         }
       )
       .setRequired(true)
@@ -60,25 +60,25 @@ export async function execute(
     return;
   }
 
-  const mode = interaction.options.getString("mode") as "normal" | "song" | "queue" | "auto";
+  const repeatMode = parseInt(interaction.options.getString("mode", true)) as RepeatMode | 3;
 
-  if (mode !== "auto" && queue.autoplay) {
-    queue.toggleAutoplay();
-  }
-
-  if (mode === "normal") {
-    queue.setRepeatMode(RepeatMode.DISABLED);
-  } else if (mode === "song") {
-    queue.setRepeatMode(RepeatMode.SONG);
-  } else if (mode === "queue") {
-    queue.setRepeatMode(RepeatMode.QUEUE);
+  if (repeatMode !== 3) {
+    queue.setRepeatMode(repeatMode);
+    if (queue.autoplay) {
+      queue.toggleAutoplay();
+    }
   } else if (!queue.autoplay) {
     queue.toggleAutoplay();
+    if (queue.repeatMode !== RepeatMode.DISABLED) {
+      queue.setRepeatMode(RepeatMode.DISABLED);
+    }
   }
+
+  const currentRepeatMode = client.repeatModeLabel(queue.repeatMode, queue.autoplay);
 
   queue.lastAction = {
     icon: interaction.member.displayAvatarURL(),
-    text: `${interaction.member.displayName}: Queue Mode: ${client.repeatModeLabel(queue.repeatMode, queue.autoplay)}`,
+    text: `${interaction.member.displayName}: Queue Mode: ${currentRepeatMode}`,
     time: interaction.createdTimestamp
   };
 

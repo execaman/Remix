@@ -34,6 +34,18 @@ export default async (client: Remix, interaction: Discord.ButtonInteraction<"cac
             .setTitle("Get Started with these 3 easy steps:")
             .setDescription(`- Mention me to summon this message or the player if active\n- You can always hit the 'Search and start playing!' button\n- Get used to the player controls and slash or text commands\n
           `)
+        ],
+        components: [
+          new Discord.ActionRowBuilder<Discord.ButtonBuilder>().setComponents(
+            new Discord.ButtonBuilder()
+              .setCustomId("message_slash_commands")
+              .setStyle(Discord.ButtonStyle.Secondary)
+              .setLabel("View Slash Commands"),
+            new Discord.ButtonBuilder()
+              .setCustomId("message_text_commands")
+              .setStyle(Discord.ButtonStyle.Secondary)
+              .setLabel("View Text Commands")
+          )
         ]
       });
     } else if (customId === "playlist") {
@@ -56,6 +68,50 @@ export default async (client: Remix, interaction: Discord.ButtonInteraction<"cac
         return;
       }
       await interaction.showModal(client.playerSearchModal());
+    } else if (customId === "slash_commands") {
+      const commands: { [x: string]: string[] } = {};
+      client.commands.slash.forEach((command) => {
+        if (command.category in commands) commands[command.category].push(command.data.name);
+        else commands[command.category] = [command.data.name];
+      });
+      await interaction.update({
+        embeds: [
+          new Discord.EmbedBuilder()
+            .setColor(Discord.Colors.Yellow)
+            .setAuthor({
+              name: `Slash Commands [${client.commands.slash.size}]`,
+              iconURL: client.user.displayAvatarURL()
+            })
+            .setFields(
+              Object.entries(commands).map((entry) => ({
+                name: entry[0],
+                value: Discord.codeBlock(entry[1].join(", "))
+              }))
+            )
+        ]
+      });
+    } else if (customId === "text_commands") {
+      const commands: { [x: string]: string[] } = {};
+      client.commands.text.forEach((command) => {
+        if (command.category in commands) commands[command.category].push(command.data.name);
+        else commands[command.category] = [command.data.name];
+      });
+      await interaction.update({
+        embeds: [
+          new Discord.EmbedBuilder()
+            .setColor(Discord.Colors.Yellow)
+            .setAuthor({
+              name: `Text Commands [${client.commands.text.size}]`,
+              iconURL: client.user.displayAvatarURL()
+            })
+            .setFields(
+              Object.entries(commands).map((entry) => ({
+                name: entry[0],
+                value: Discord.codeBlock(entry[1].join(", "))
+              }))
+            )
+        ]
+      });
     }
     return;
   }

@@ -3,8 +3,8 @@ import type Remix from "../../../client.mjs";
 import type { Queue } from "../../../utility/types.mjs";
 
 export const data = new Discord.SlashCommandBuilder()
-  .setName("skip")
-  .setDescription("play the next song");
+  .setName("next")
+  .setDescription("play the next song in queue");
 
 export async function execute(
   client: Remix,
@@ -14,11 +14,11 @@ export async function execute(
 
   const queue = client.player.getQueue(interaction.guildId) as Queue | undefined;
 
-  if (!queue || (!queue.autoplay && queue.songs.length === 1)) {
+  if (!queue || queue.songs.length === 1) {
     await interaction.editReply({
       embeds: [
         client.errorEmbed(
-          !queue ? "The player is inactive at the moment" : "There are no songs ahead in Queue"
+          !queue ? "The player is inactive at the moment" : "There are no upcoming songs in queue"
         )
       ]
     });
@@ -51,12 +51,20 @@ export async function execute(
         client.playerAlertEmbed({
           icon: queue.lastAction.icon,
           title: queue.lastAction.text,
-          description: `Stopping '${queue.songs[0].name?.slice(0, 40) || "Untitled Track"}'`
+          description: `Stopping '${queue.songs[0].name?.slice(0, 45).trim() || "Untitled Track"}'`
         })
       ]
     });
   }
 
-  await queue.skip();
+  try {
+    await queue.skip();
+  } catch {
+    await interaction.editReply({
+      embeds: [client.errorEmbed()]
+    });
+    return;
+  }
+
   await interaction.deleteReply();
 }

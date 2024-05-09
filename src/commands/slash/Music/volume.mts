@@ -4,11 +4,11 @@ import type { Queue } from "../../../utility/types.mjs";
 
 export const data = new Discord.SlashCommandBuilder()
   .setName("volume")
-  .setDescription("set player volume")
+  .setDescription("change player volume")
   .addIntegerOption((level) =>
     level
       .setName("level")
-      .setDescription("10 >= level <= 150")
+      .setDescription("volume level (10 - 150)")
       .setMinValue(10)
       .setMaxValue(150)
       .setRequired(true)
@@ -43,15 +43,15 @@ export async function execute(
     return;
   }
 
-  const volume = interaction.options.getInteger("level") as number;
-
-  queue.setVolume(volume);
+  const level = interaction.options.getInteger("level", true);
 
   queue.lastAction = {
     icon: interaction.member.displayAvatarURL(),
-    text: `${interaction.member.displayName}: Volume ${volume}%`,
+    text: `${interaction.member.displayName}: Volume ${level}%`,
     time: interaction.createdTimestamp
   };
+
+  queue.setVolume(level);
 
   await interaction.deleteReply();
 }

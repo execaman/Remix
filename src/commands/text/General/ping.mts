@@ -1,6 +1,6 @@
 import TextCommandBuilder from "../../../modules/classes/builder.mjs";
 import type Remix from "../../../client.mjs";
-import { Message } from "../../../utility/types.mjs";
+import type { Message } from "../../../utility/types.mjs";
 
 export const data = new TextCommandBuilder()
   .setName("ping")
