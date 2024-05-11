@@ -427,10 +427,10 @@ export default class Remix extends Discord.Client<true> {
     let embedDescription = "";
 
     const options = songs.map((song, index) => {
-      const item = this.util.formatSong(song, Math.floor(Math.random() * 5) + 50);
+      const item = this.util.formatSong(song, 45);
       const itemIndex = size - 25 + index;
 
-      embedDescription += `${this.config.emoji.song}${String.fromCharCode(10240)}${Discord.hyperlink(item.name.replace(/[\[\]\(\)]/g, ""), song.url)}\n`;
+      embedDescription += `${Discord.bold(`1.[${song.streamURL ? this.config.emoji.song : this.config.emoji.queue}]`)}${String.fromCharCode(10240)}${Discord.hyperlink(item.name.replace(/[\[\]\(\)]/g, ""), song.url)}\n`;
 
       return new Discord.StringSelectMenuOptionBuilder()
         .setEmoji(this.config.emoji.clock)
