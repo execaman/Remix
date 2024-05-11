@@ -1,7 +1,5 @@
-<p align="center">
-  <img src="./img/remix.gif" /><br>
-  <span>Avatar from <a href="https://www.freepik.com/">Freepik</a></span>
-</p>
+> [!NOTE]
+> This project is no longer being maintained as music (from Spotify, Soundcloud, YouTube, etc.) on Discord is a continuous race of breaking TOS and with recent updates to YouTube bypassing security is not possible and shouldn't be attempted either.
 
 ## Introduction
 
